@@ -16,9 +16,9 @@ $crawRootPath = './crawFiles/yinduo/';
 
 set_time_limit(0); // script keep running;
 
-
 $spider = new Spider();
 $rs = $spider
+        ->setUrl($url)
         ->setHeader([
             'Accept' => '*/*',
             'Accept-Language' => 'zh-CN,zh;q=0.9,und;q=0.8',
@@ -29,15 +29,15 @@ $rs = $spider
             'Referer' => 'https://www.yinduowang.com/login',
             'Upgrade-Insecure-Requests' => '1',
             'User-Agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
-            'X-CSRF-TOKEN' => 'cRBMKfMMrCEY6VSSDlB7QCIDO93r7epZLF3xgRE2',
-            'X-Requested-With' => 'XMLHttpRequest',
+            'X-Requested-With' => 'XMLHttpRequest'
         ])
         ->setCookie('E:\www\spider\cookie', 'yinduo')
+        ->setXsrfToken()
         ->setUnCheckSsl()
-        ->post($url, [
-            'mobile' => '13126166807',
-            'pwd' => '123456',
+        ->post([
+            'mobile' => '15512973505',
+            'pwd' => 'LlF213344',
             'set_verify_input' => '',
         ]);
 
-p($rs);
+p(json_decode($rs));
