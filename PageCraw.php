@@ -49,27 +49,13 @@ $spider->setUnCheckSsl()
 
 if ($crawParams == 'img') {
     for ($i = 1, $cnt = 1; $i <= $cnt; $i ++) {
-        $currDictFile = $saveImgPath . $i;
-        if (is_file($currDictFile)) {
-            $currDictFileCreateTime = filectime($currDictFile);
-            if ($runTime-$currDictFileCreateTime < 86400) { // continue dict files which createTime less then one day
-               logWrite("the ". $i . " page has parsed");
-               continue;
-            }
-        }
         $url = $baseUrl . '&page='. $i;
-        $htmlPath = '';
-        if (!is_file($crawImgPath . $i . '/F') || $runTime-filectime($crawImgPath . $i . '/F') > 86400) { // reCraw sourceFiles which catchTime more then one day
-            logWrite('begin catching the '. $i . ' page');
-            $html = $spider->setUrl($url)->get();
-            preg_match("/<body>(.*?)<\/body>/s", $html, $m);
-            if (!is_dir($crawImgPath . $i)) {
-                mkdir($crawImgPath. $i, 0777, true);
-            }
-            file_put_contents($crawImgPath . $i . '/F', $m[0]);
-        }
-        $htmlPath = $crawImgPath . $i . '/F';
-        $htmlStr = file_get_contents($htmlPath);
+        logWrite('begin catching the '. $i . ' page');
+        $html = $spider->setUrl($url)
+                ->setReturnCharset()
+                ->get();
+        preg_match("/<body>(.*?)<\/body>/s", $html, $m);
+        $htmlStr = $m[0];
         $data = [];
         $crawler = new Crawler($htmlStr);
         try {
@@ -101,7 +87,7 @@ if ($crawParams == 'img') {
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
                     logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
-                    $html = $spider->setUrl($row['href'])->get();
+                    $html = $spider->setUrl($row['href'])->setReturnCharset()->get();
                     preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
 //                    preg_match_all("/<input.*?type=\"image\">/", $html, $m);
                     $imageList = $m[0];
@@ -113,7 +99,6 @@ if ($crawParams == 'img') {
                     }
                     foreach ($imageList as $imgIndex => $image) {
                         $imgIndex = $imgIndex + 1;
-                        if ($imgIndex == 1) continue;
                         $image = explode('data-src=', $image);
                         $image = preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];
