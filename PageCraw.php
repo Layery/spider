@@ -19,9 +19,7 @@ if ($crawParams == 'web') {
     $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
     $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=8';
-    $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=16';
-    $baseUrl = 'https://hs.dety.men/thread0806.php?fid=16';
-    $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=8';
+    $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=16';
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -36,8 +34,6 @@ $runTime = time();
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
 $spider->setUnCheckSsl()
-    ->setReturnCharset()
-    ->setReturnStream()
     ->setHeader([
         'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
@@ -65,8 +61,7 @@ if ($crawParams == 'img') {
         $htmlPath = '';
         if (!is_file($crawImgPath . $i . '/F') || $runTime-filectime($crawImgPath . $i . '/F') > 86400) { // reCraw sourceFiles which catchTime more then one day
             logWrite('begin catching the '. $i . ' page');
-            $html = $spider->post($url);
-            $html = mb_convert_encoding($html, 'utf-8', 'gbk');
+            $html = $spider->setUrl($url)->get();
             preg_match("/<body>(.*?)<\/body>/s", $html, $m);
             if (!is_dir($crawImgPath . $i)) {
                 mkdir($crawImgPath. $i, 0777, true);
@@ -106,7 +101,7 @@ if ($crawParams == 'img') {
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
                     logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
-                    $html = $spider->post($row['href']);
+                    $html = $spider->setUrl($row['href'])->get();
                     preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
 //                    preg_match_all("/<input.*?type=\"image\">/", $html, $m);
                     $imageList = $m[0];
@@ -118,10 +113,11 @@ if ($crawParams == 'img') {
                     }
                     foreach ($imageList as $imgIndex => $image) {
                         $imgIndex = $imgIndex + 1;
+                        if ($imgIndex == 1) continue;
                         $image = explode('data-src=', $image);
                         $image = preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];
-                        $res = $spider->download($e[0]);
+                        $res = $spider->setUrl($e[0])->download();
                         file_put_contents($imagePath . $imgIndex . '.'. $ext, $res);
                         logWrite('save '. $imgIndex . 'th'. ' success');
                     }
@@ -150,7 +146,9 @@ if ($crawParams == 'web') {
         $htmlPath = '';
         if (!is_file($crawPagePath . $i . '/F') || $runTime-filemtime($crawPagePath . $i . '/F') > 86400) { // reCraw sourceFiles which catchTime more then one day
             logWrite('begin catching the '. $i . ' page');
-            $html = $spider->setReturnCharset()->post($url);
+            $html = $spider->setUrl($url)
+                ->setReturnCharset()
+                ->post();
             preg_match("/<body>(.*?)<\/body>/s", $html, $m);
             if (!is_dir($crawPagePath . $i)) {
                 mkdir($crawPagePath. $i, 0777, true);
@@ -190,7 +188,9 @@ if ($crawParams == 'web') {
                     if ($itemIndex == 1) $row['href'] = 'https://cl.wpio.xyz/htm_data/22/1903/3469161.html';
                     #$itemIndex = 35; // debug
                     if (!is_file($crawPagePath . $i . '/S'. $itemIndex) || $runTime-filemtime($crawPagePath . $i . '/S'. $itemIndex) > 86400) {
-                        $html = $spider->post($row['href']);
+                        $html = $spider->setUrl($row['href'])
+                            ->setReturnCharset()
+                            ->post();
                         // div@class='tpc_content do_not_catch'
                         preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
                         $content = $content[0];

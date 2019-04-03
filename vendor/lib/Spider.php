@@ -139,7 +139,7 @@ class Spider
         return call_user_func([$this, 'curl'], $data, $timeOut);
     }
 
-    public function download($url = '')
+    public function download()
     {
         curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, 1); // 获取的信息以文件流的形式返回
         curl_setopt($this->_ch, CURLOPT_HTTPGET, 1); // 获取的信息以文件流的形式返回
@@ -147,7 +147,7 @@ class Spider
         curl_setopt($this->_ch, CURLOPT_DNS_USE_GLOBAL_CACHE, false);
         curl_setopt($this->_ch, CURLOPT_DNS_CACHE_TIMEOUT, 2);
         curl_setopt($this->_ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-        return call_user_func([$this, 'curl'], $url);
+        return call_user_func([$this, 'curl'], []);
     }
 
     protected function getCookie($url = '', $post = [])

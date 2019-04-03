@@ -13,7 +13,7 @@ while (1) {
     $context  = stream_context_create($opts);
     $content = @file_get_contents($url,false,$context);
     $dom = new \DOMDocument();
-    @$dom->loadHTML('<?xml encoding="utf-8" ?>'. $content); // 指定以u8编码加载
+    @$dom->loadHTML('<?xml encoding="utf-8" ?>'. $content);
     $crawler = new \DOMXPath($dom);
     $list = $crawler->query('//div[@class="in-part2 top50"]/div[@class="list-part"]/div/div[contains(@class, "list")]');
     $result = array();
@@ -34,10 +34,11 @@ while (1) {
     $msg = $text = '';
     $month = 1;
     foreach ($result as $row) {
-        $title = preg_match('/\d+/s', $row['title'], $t);
-        $title = (int)$t[0];
-        if ($title == $month && $row['over_rich'] > 0) {
+        #$title = preg_match('/\d+/s', $row['title'], $t);
+        #$title = (int)$t[0];
+        if (strpos($row['title'], "车贷") !== false && $row['over_rich'] >= 0) {
             $text .= $row['title'] . '上新_剩余'. $row['over_rich']. '|';
+            exit($text);
             $msg .= '【'. $row['title'] . '】利率【'. $row['rate']. ' 剩余可投【'. $row['over_rich'].'】'. "\n\n";
         }
     }
