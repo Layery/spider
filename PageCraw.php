@@ -48,7 +48,7 @@ $spider->setUnCheckSsl()
 
 
 if ($crawParams == 'img') {
-    for ($i = 1, $cnt = 1; $i <= $cnt; $i ++) {
+    for ($i = 2, $cnt = 2; $i <= $cnt; $i ++) {
         $url = $baseUrl . '&page='. $i;
         logWrite('begin catching the '. $i . ' page');
         $html = $spider->setUrl($url)
@@ -87,22 +87,20 @@ if ($crawParams == 'img') {
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
                     logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
-                    $html = $spider->setUrl($row['href'])->setReturnCharset()->get();
-                    preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
+                    $html = $spider->setUrl($row['href'])->get();
+                    @preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
 //                    preg_match_all("/<input.*?type=\"image\">/", $html, $m);
                     $imageList = $m[0];
-                    preg_match('/\].*?\]/',$row['title'], $rs);
-                    $title = substr($rs[0], 1);
-                    $imagePath = mb_convert_encoding($saveImgPath. $title. '-'. $itemIndex, 'gbk') . "/";
+                    $imagePath = mb_convert_encoding($saveImgPath. $row['title'], 'gbk') . "/";
                     if (!is_dir($imagePath)) {
                         mkdir($imagePath, 0777, true);
                     }
                     foreach ($imageList as $imgIndex => $image) {
                         $imgIndex = $imgIndex + 1;
                         $image = explode('data-src=', $image);
-                        $image = preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
+                        $image = @preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];
-                        $res = $spider->setUrl($e[0])->download();
+                        $res = @file_get_contents($e[0]);
                         file_put_contents($imagePath . $imgIndex . '.'. $ext, $res);
                         logWrite('save '. $imgIndex . 'th'. ' success');
                     }
@@ -111,8 +109,6 @@ if ($crawParams == 'img') {
         } catch (\Exception $e) {
             logWrite('catch Exception on the '. $i . ' page '. $itemIndex . ' item');
         }
-        logWrite("sleep three seconds please wait...");
-        sleep(3);
     }
 }
 
@@ -128,20 +124,12 @@ if ($crawParams == 'web') {
             }
         }
         $url = $baseUrl . '&page='. $i;
-        $htmlPath = '';
-        if (!is_file($crawPagePath . $i . '/F') || $runTime-filemtime($crawPagePath . $i . '/F') > 86400) { // reCraw sourceFiles which catchTime more then one day
-            logWrite('begin catching the '. $i . ' page');
-            $html = $spider->setUrl($url)
-                ->setReturnCharset()
-                ->post();
-            preg_match("/<body>(.*?)<\/body>/s", $html, $m);
-            if (!is_dir($crawPagePath . $i)) {
-                mkdir($crawPagePath. $i, 0777, true);
-            }
-            file_put_contents($crawPagePath . $i . '/F', $m[0]);
-        }
-        $htmlPath = $crawPagePath . $i . '/F';
-        $htmlStr = file_get_contents($htmlPath);
+        logWrite('begin catching the '. $i . ' page');
+        $html = $spider->setUrl($url)
+            ->setReturnCharset()
+            ->post();
+        preg_match("/<body>(.*?)<\/body>/s", $html, $m);
+        $htmlStr = $m[0];
         $data = [];
         $crawler = new Crawler($htmlStr);
         try {
@@ -170,19 +158,13 @@ if ($crawParams == 'web') {
                 $dictStr = '';
                 foreach ($data as $key => $row) {
                     $itemIndex = $key + 1;
-                    if ($itemIndex == 1) $row['href'] = 'https://cl.wpio.xyz/htm_data/22/1903/3469161.html';
                     #$itemIndex = 35; // debug
-                    if (!is_file($crawPagePath . $i . '/S'. $itemIndex) || $runTime-filemtime($crawPagePath . $i . '/S'. $itemIndex) > 86400) {
-                        $html = $spider->setUrl($row['href'])
-                            ->setReturnCharset()
-                            ->post();
-                        // div@class='tpc_content do_not_catch'
-                        preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
-                        $content = $content[0];
-                        file_put_contents($crawPagePath . $i .'/S'. $itemIndex, $content[0].$content[1]);
-                    }
-                    $htmlPath = $crawPagePath . $i . '/S'. $itemIndex;
-                    $htmlStr = file_get_contents($htmlPath);
+                    $html = $spider->setUrl($row['href'])
+                        ->setReturnCharset()
+                        ->get();
+                    // div@class='tpc_content do_not_catch'
+                    preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
+                    $htmlStr = implode('', $content[0]);
                     $crawler = new Crawler($htmlStr);
                     $sourceTitle = $crawler->filterXPath('//h4')->text();
                     $sourceLink = 'src=http://www.baidu.com';
@@ -209,6 +191,7 @@ if ($crawParams == 'web') {
                 logWrite('save the '. $i . ' dict success');
             }
         } catch (\Exception $e) {
+            p($e->getTraceAsString());
             logWrite('NOTICE: catch Exception on the '. $i . ' page '. $itemIndex . ' item');
             continue;
         }
