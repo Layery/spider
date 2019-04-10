@@ -20,6 +20,7 @@ if ($crawParams == 'web') {
 } else if ($crawParams == 'img') {
     $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=8';
     $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=16';
+    $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=7'; // 技术讨论
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -48,16 +49,15 @@ $spider->setUnCheckSsl()
 
 
 if ($crawParams == 'img') {
-    for ($i = 2, $cnt = 2; $i <= $cnt; $i ++) {
+    for ($i = 1, $cnt = 1; $i <= $cnt; $i ++) {
         $url = $baseUrl . '&page='. $i;
         logWrite('begin catching the '. $i . ' page');
         $html = $spider->setUrl($url)
-                ->setReturnCharset()
+//                ->setReturnCharset()
                 ->get();
-        preg_match("/<body>(.*?)<\/body>/s", $html, $m);
-        $htmlStr = $m[0];
         $data = [];
-        $crawler = new Crawler($htmlStr);
+        $crawler = new Crawler($html);
+        $postTitle = $crawler->filterXPath('//title')->text();
         try {
             logWrite('begin parse the '. $i . ' page');
             $contentTable = $crawler->filterXPath('//div[@class="t"][2]/table');
@@ -86,11 +86,30 @@ if ($crawParams == 'img') {
                 foreach ($data as $key => $row) {
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
-                    logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
-                    $html = $spider->setUrl($row['href'])->get();
-                    @preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
-//                    preg_match_all("/<input.*?type=\"image\">/", $html, $m);
-                    $imageList = $m[0];
+                    $imageList = [];
+                    switch ($postTitle) {
+                        case strpos($postTitle, '技術討論區') !== false:
+                            #exit(mb_convert_encoding($html, 'utf-8'));
+                            if (!preg_match('/［\d+[Pp]］/', $row['title']) || !preg_match('/\[\d+[Pp]\]/is', $row['title'])) {
+                                logWrite('continue item '. $i . ' page title: '. $row['title']);
+                                continue;
+                            }
+                            p($row);
+                            logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
+                            $html = $spider->setUrl($row['href'])->get();
+                            echo "aaa\n";
+                            p($html);
+                            preg_match_all("//is", $html, $m);
+                            $imageList = $m[0];
+                            break;
+                        default:
+                            logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
+                            $html = $spider->setUrl($row['href'])->get();
+                            @preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
+//                            preg_match_all("/<input.*?type=\"image\">/", $html, $m);
+                            $imageList = $m[0];
+                            break;
+                    }
                     $imagePath = mb_convert_encoding($saveImgPath. $row['title'], 'gbk') . "/";
                     if (!is_dir($imagePath)) {
                         mkdir($imagePath, 0777, true);
