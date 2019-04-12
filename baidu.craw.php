@@ -35,8 +35,8 @@ $rs = $spider
         ->setXsrfToken()
         ->setUnCheckSsl()
         ->post([
-            'mobile' => '15512973505',
-            'pwd' => 'LlF213344',
+            'mobile' => '13126166807',
+            'pwd' => '1245@545',
             'set_verify_input' => '',
         ]);
 

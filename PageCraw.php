@@ -5,6 +5,11 @@
  * Date: 2018/12/25
  * Time: 16:13
  */
+ini_set('max_execution_time', 0); // 不限制执行时间
+ini_set('memory_limit','4096M');
+set_time_limit(0); // 不限制超时时间
+
+
 require './vendor/autoload.php';
 require './vendor/lib/Spider.php';
 include 'E:/www/global';
@@ -49,17 +54,17 @@ $spider->setUnCheckSsl()
 
 
 if ($crawParams == 'img') {
-    for ($i = 1, $cnt = 1; $i <= $cnt; $i ++) {
-        $url = $baseUrl . '&page='. $i;
-        logWrite('begin catching the '. $i . ' page');
+    for ($i = 1, $cnt = 1; $i <= $cnt; $i++) {
+        $url = $baseUrl . '&page=' . $i;
+        logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
 //                ->setReturnCharset()
-                ->get();
+            ->get();
         $data = [];
         $crawler = new Crawler($html);
         $postTitle = $crawler->filterXPath('//title')->text();
         try {
-            logWrite('begin parse the '. $i . ' page');
+            logWrite('begin parse the ' . $i . ' page');
             $contentTable = $crawler->filterXPath('//div[@class="t"][2]/table');
             $tdDom = $contentTable->filterXPath('//tr[contains(@class,"tr3 t_one tac")]/td')->each(function (Crawler $node, $i) use ($baseUrl, &$data) {
                 if ($node->attr('class')) {
@@ -69,7 +74,7 @@ if ($crawParams == 'img') {
                     }
                     $aDom = $node->filterXPath('//h3/a');
                     $href = pathinfo($baseUrl);
-                    $href = $href['dirname'] . '/'. $aDom->attr('href');
+                    $href = $href['dirname'] . '/' . $aDom->attr('href');
                     $data[] = [
                         'href' => $href,
                         'title' => $title
@@ -77,7 +82,7 @@ if ($crawParams == 'img') {
                 }
             });
             $totalItem = count($data);
-            logWrite('parse the '. $i . ' page success count '. $totalItem. ' item');
+            logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
             // then craw next page
             if (!empty($data)) {
                 $htmlPath = $htmlStr = '';
@@ -91,11 +96,11 @@ if ($crawParams == 'img') {
                         case strpos($postTitle, '技術討論區') !== false:
                             #exit(mb_convert_encoding($html, 'utf-8'));
                             if (!preg_match('/［\d+[Pp]］/', $row['title']) || !preg_match('/\[\d+[Pp]\]/is', $row['title'])) {
-                                logWrite('continue item '. $i . ' page title: '. $row['title']);
+                                logWrite('continue item ' . $i . ' page title: ' . $row['title']);
                                 continue;
                             }
                             p($row);
-                            logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
+                            logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $row['title']);
                             $html = $spider->setUrl($row['href'])->get();
                             echo "aaa\n";
                             p($html);
@@ -103,14 +108,14 @@ if ($crawParams == 'img') {
                             $imageList = $m[0];
                             break;
                         default:
-                            logWrite('begin catching the '. $itemIndex. ' item '. ' title: '. $row['title']);
+                            logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $row['title']);
                             $html = $spider->setUrl($row['href'])->get();
                             @preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
 //                            preg_match_all("/<input.*?type=\"image\">/", $html, $m);
                             $imageList = $m[0];
                             break;
                     }
-                    $imagePath = mb_convert_encoding($saveImgPath. $row['title'], 'gbk') . "/";
+                    $imagePath = mb_convert_encoding($saveImgPath . $row['title'], 'gbk') . "/";
                     if (!is_dir($imagePath)) {
                         mkdir($imagePath, 0777, true);
                     }
@@ -120,102 +125,149 @@ if ($crawParams == 'img') {
                         $image = @preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];
                         $res = @file_get_contents($e[0]);
-                        file_put_contents($imagePath . $imgIndex . '.'. $ext, $res);
-                        logWrite('save '. $imgIndex . 'th'. ' success');
+                        file_put_contents($imagePath . $imgIndex . '.' . $ext, $res);
+                        logWrite('save ' . $imgIndex . 'th' . ' success');
                     }
                 }
             }
         } catch (\Exception $e) {
-            logWrite('catch Exception on the '. $i . ' page '. $itemIndex . ' item');
+            logWrite('catch Exception on the ' . $i . ' page ' . $itemIndex . ' item');
         }
     }
 }
 
 
 if ($crawParams == 'web') {
-    for ($i = 1, $cnt = 30; $i <= $cnt; $i ++) {
-        $currDictFile = $saveDictPath . $i. '.html';
+    $data = [];
+    $searchList = [];
+    for ($i = $argv[2] ? $argv[2] : 1, $cnt = $argv[3] ? $argv[3] : 2; $i <= $cnt; $i++) {
+        $currDictFile = $saveDictPath . $i . '.html';
         if (is_file($currDictFile)) {
             $currDictFileCreateTime = filectime($currDictFile);
-            if ($runTime-$currDictFileCreateTime < 86400) { // continue dict files which createTime less then one day
-                logWrite("the ". $i . " page has parsed");
+            if ($runTime - $currDictFileCreateTime < 86400) { // continue dict files which createTime less then one day
+                logWrite("the " . $i . " page has parsed");
                 continue;
             }
         }
-        $url = $baseUrl . '&page='. $i;
-        logWrite('begin catching the '. $i . ' page');
+        $url = $baseUrl . '&page=' . $i;
+        logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
             ->setReturnCharset()
             ->post();
         preg_match("/<body>(.*?)<\/body>/s", $html, $m);
         $htmlStr = $m[0];
-        $data = [];
         $crawler = new Crawler($htmlStr);
         try {
-            logWrite('begin parse the '. $i . ' page');
+            logWrite('begin parse the ' . $i . ' page');
             $contentTable = $crawler->filterXPath('//div[@class="t"][2]/table');
-            $tdDom = $contentTable->filterXPath('//tr[contains(@class,"tr3 t_one tac")]/td')->each(function (Crawler $node, $i) use ($hostInfo, &$data) {
+            $tdDom = $contentTable->filterXPath('//tr[contains(@class,"tr3 t_one tac")]/td')->each(function (Crawler $node) use (&$data, $baseUrl, $hostInfo) {
                 if ($node->attr('class')) {
                     $title = preg_replace('/\s/', '', $node->text());
                     $aDom = $node->filterXPath('//a');
                     if (strpos($title, '↑') !== false) {
                         return;
                     }
-                    $href = $hostInfo['dirname'] . '/'. $aDom->attr('href');
+//                    if (!preg_match("/SM|sm|调教|变态|屎|另类/is", $title)) {
+                    if (!preg_match("/阿姨/is", $title)) {
+                        return;
+                    }
+                    $href = $hostInfo['dirname'] . '/' . $aDom->attr('href');
                     $data[] = [
                         'href' => $href,
                         'title' => $title
                     ];
                 }
             });
+            $searchList[] = $data;
             $totalItem = count($data);
-            logWrite('parse the '. $i . ' page success count '. $totalItem. ' item');
+            logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
             // then craw next page
-            if (!empty($data)) {
-                $htmlPath = $htmlStr = '';
-                $crawler = null;
-                $dictStr = '';
-                foreach ($data as $key => $row) {
-                    $itemIndex = $key + 1;
-                    #$itemIndex = 35; // debug
-                    $html = $spider->setUrl($row['href'])
-                        ->setReturnCharset()
-                        ->get();
-                    // div@class='tpc_content do_not_catch'
-                    preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
-                    $htmlStr = implode('', $content[0]);
-                    $crawler = new Crawler($htmlStr);
-                    $sourceTitle = $crawler->filterXPath('//h4')->text();
-                    $sourceLink = 'src=http://www.baidu.com';
-                    $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
-                    if ($aCount) {
-                        $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
-                        $sourceLink = explode('src=', $sourceLink);
-                        $sourceLink = trim($sourceLink[1], '\'');
-                    } else {
-                        $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
-                        $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
-                        $sourceLink = $sourceLink[0];
-                    }
-                    $dictStr .= '<tr>';
-                    $dictStr .= '<td class="td-id"><span class="num">'. $itemIndex. '</span></td>';
-                    $dictStr .= '<td class="td-title"><a href="'. $sourceLink. '" target="_bank">'.$sourceTitle.'</a></td>';
-                    $dictStr .= '</tr>';
-                }
-                $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
-                if (!is_dir($saveDictPath)) {
-                    mkdir($saveDictPath, 0777, true);
-                }
-                file_put_contents($saveDictPath. $i. '.html', $dictStr, FILE_APPEND);
-                logWrite('save the '. $i . ' dict success');
-            }
         } catch (\Exception $e) {
             p($e->getTraceAsString());
-            logWrite('NOTICE: catch Exception on the '. $i . ' page '. $itemIndex . ' item');
+            logWrite('NOTICE: catch Exception on the ' . $i . ' page ' . $itemIndex . ' item');
             continue;
         }
+
         logWrite("sleep three seconds please wait...");
-        sleep(3);
+        sleep(1);
+    }
+    if (!empty($searchList)) {
+        $htmlPath = $htmlStr = '';
+        $crawler = null;
+        $dictStr = '';
+
+        foreach (end($searchList) as $key => $row) {
+            $itemIndex = $key + 1;
+            #$itemIndex = 35; // debug
+            $html = $spider->setUrl($row['href'])
+                ->setReturnCharset()
+                ->get();
+            // div@class='tpc_content do_not_catch'
+            preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
+            $htmlStr = implode('', $content[0]);
+            $crawler = new Crawler($htmlStr);
+            $sourceTitle = $crawler->filterXPath('//h4')->text();
+            $sourceLink = 'src=http://www.baidu.com';
+            $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
+            if ($aCount) {
+                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
+                $sourceLink = explode('src=', $sourceLink);
+                $sourceLink = trim($sourceLink[1], '\'');
+            } else {
+                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
+                $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
+                $sourceLink = $sourceLink[0];
+            }
+            $dictStr .= '<tr>';
+            $dictStr .= '<td class="td-id"><span class="num">' . $itemIndex . '</span></td>';
+            $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
+            $dictStr .= '</tr>';
+        }
+        $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
+        if (!is_dir($saveDictPath)) {
+            mkdir($saveDictPath, 0777, true);
+        }
+        file_put_contents($saveDictPath . 'search' . '.html', $dictStr, FILE_APPEND);
+        logWrite('save the search dict success');
+    }
+    die;
+    if (!empty($data)) {
+        $htmlPath = $htmlStr = '';
+        $crawler = null;
+        $dictStr = '';
+        foreach ($data as $key => $row) {
+            $itemIndex = $key + 1;
+            #$itemIndex = 35; // debug
+            $html = $spider->setUrl($row['href'])
+                ->setReturnCharset()
+                ->get();
+            // div@class='tpc_content do_not_catch'
+            preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
+            $htmlStr = implode('', $content[0]);
+            $crawler = new Crawler($htmlStr);
+            $sourceTitle = $crawler->filterXPath('//h4')->text();
+            $sourceLink = 'src=http://www.baidu.com';
+            $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
+            if ($aCount) {
+                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
+                $sourceLink = explode('src=', $sourceLink);
+                $sourceLink = trim($sourceLink[1], '\'');
+            } else {
+                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
+                $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
+                $sourceLink = $sourceLink[0];
+            }
+            $dictStr .= '<tr>';
+            $dictStr .= '<td class="td-id"><span class="num">' . $itemIndex . '</span></td>';
+            $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
+            $dictStr .= '</tr>';
+        }
+        $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
+        if (!is_dir($saveDictPath)) {
+            mkdir($saveDictPath, 0777, true);
+        }
+        file_put_contents($saveDictPath . $i . '.html', $dictStr, FILE_APPEND);
+        logWrite('save the ' . $i . ' dict success');
     }
 }
 
