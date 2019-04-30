@@ -6,7 +6,8 @@
  * Time: 16:13
  */
 ini_set('max_execution_time', 0); // 不限制执行时间
-ini_set('memory_limit','4096M');
+ini_set('memory_limit','512M');
+error_reporting(E_ALL ^E_NOTICE);
 set_time_limit(0); // 不限制超时时间
 
 
@@ -16,12 +17,16 @@ include 'E:/www/global';
 
 use Symfony\Component\DomCrawler\Crawler;
 
+
+//    fwrite(STDOUT, iconv('utf-8', 'gbk', "请输入结束页: \n"));
+//    $end = trim(fgets(STDIN));
+//    fwrite(STDOUT, "Hello,$name"); //在终端回显输入
+
 $crawParams = isset($argv[1]) ? $argv[1] : 'web';
 $search = 'https://yandex.ru/search/?text=%E8%8D%89%E6%A6%B4%E7%A4%BE%E5%8C%BA';
 $baseUrl = '';
 if ($crawParams == 'web') {
-    $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=22';
-    $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=22';
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
     $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=8';
     $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=16';
@@ -34,6 +39,9 @@ $crawPagePath = $crawRootPath . 'crawWeb/';
 $crawImgPath = $crawRootPath . 'crawImg/';
 $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
+$loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
+$loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 5;
+$filter = (isset($argv[4]) && $argv[4]) ? $argv[4] : '';
 $tmplPath = './vendor/tmpl/';
 
 $runTime = time();
@@ -140,88 +148,86 @@ if ($crawParams == 'img') {
 if ($crawParams == 'web') {
     $data = [];
     $searchList = [];
-    for ($i = $argv[2] ? $argv[2] : 1, $cnt = $argv[3] ? $argv[3] : 2; $i <= $cnt; $i++) {
-        $currDictFile = $saveDictPath . $i . '.html';
-        if (is_file($currDictFile)) {
-            $currDictFileCreateTime = filectime($currDictFile);
-            if ($runTime - $currDictFileCreateTime < 86400) { // continue dict files which createTime less then one day
-                logWrite("the " . $i . " page has parsed");
-                continue;
-            }
-        }
+    $_SESSION['data'] = [];
+    for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '&page=' . $i;
-        logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
-            ->setReturnCharset()
+//            ->setReturnCharset()
             ->post();
         preg_match("/<body>(.*?)<\/body>/s", $html, $m);
         $htmlStr = $m[0];
-        $crawler = new Crawler($htmlStr);
-        try {
-            logWrite('begin parse the ' . $i . ' page');
-            $contentTable = $crawler->filterXPath('//div[@class="t"][2]/table');
-            $tdDom = $contentTable->filterXPath('//tr[contains(@class,"tr3 t_one tac")]/td')->each(function (Crawler $node) use (&$data, $baseUrl, $hostInfo) {
-                if ($node->attr('class')) {
-                    $title = preg_replace('/\s/', '', $node->text());
-                    $aDom = $node->filterXPath('//a');
-                    if (strpos($title, '↑') !== false) {
-                        return;
+        $dom = new DOMDocument;
+        @$dom->loadHTML($htmlStr);
+        $crawler = new DOMXPath($dom);
+        $tableDom = $crawler->query('//div[@class="t"][2]/table');
+        foreach ($tableDom as $table) {
+            $trDom = $crawler->query('//tr[contains(@class,"tr3 t_one tac")]', $table);
+            if ($trDom->length) {
+                foreach ($trDom as $tr) {
+                    $tdDom = $crawler->query('./td', $tr);
+                    if ($tdDom->length >= 5) {
+                        foreach ($tdDom as $td) {
+                            if ($td instanceof DOMElement && $td->attributes->getNamedItem('class')->nodeValue == 'tal') {
+                                $title = preg_replace('/\s/', '', $td->textContent);
+                                if (strpos($title, '↑') !== false) {
+                                    continue;
+                                }
+                                p(mb_convert_encoding($title, 'UTF-8'));
+//                                if (!preg_match("/十|口|九/is", $title)) {
+//                                    p('a');
+//                                    return;
+//                                }
+//                                p('b');
+                                $href = $crawler->query('.//a', $td)->item(0)->attributes->getNamedItem('href')->textContent;
+                                $href = $hostInfo['dirname'] . '/' . $href;
+                                $_SESSION['data'][] = [
+                                    'href' => $href,
+                                    'title' => $title
+                                ];
+                            }
+                        }
                     }
-//                    if (!preg_match("/SM|sm|调教|变态|屎|另类/is", $title)) {
-                    if (!preg_match("/阿姨/is", $title)) {
-                        return;
-                    }
-                    $href = $hostInfo['dirname'] . '/' . $aDom->attr('href');
-                    $data[] = [
-                        'href' => $href,
-                        'title' => $title
-                    ];
                 }
-            });
-            $searchList[] = $data;
-            $totalItem = count($data);
-            logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
-            // then craw next page
-        } catch (\Exception $e) {
-            p($e->getTraceAsString());
-            logWrite('NOTICE: catch Exception on the ' . $i . ' page ' . $itemIndex . ' item');
-            continue;
+            }
         }
-
-        logWrite("sleep three seconds please wait...");
-        sleep(1);
     }
-    if (!empty($searchList)) {
+    $data = $_SESSION['data'];
+    if (!empty($data)) {
         $htmlPath = $htmlStr = '';
         $crawler = null;
         $dictStr = '';
+        try {
+            foreach ($data as $key => $row) {
+                if ($itemIndex == 1) continue;
+                #$itemIndex = 35; // debug
+                $html = $spider->setUrl($row['href'])
+                    ->setReturnCharset()
+                    ->get();
+                // div@class='tpc_content do_not_catch'
+                preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
+                $htmlStr = implode('', $content[0]);
+                $crawler = new Crawler($htmlStr);
+                $sourceTitle = $crawler->filterXPath('//h4')->text();
+                $sourceLink = 'src=http://www.baidu.com';
+                $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
+                if ($aCount) {
+                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
+                    $sourceLink = explode('src=', $sourceLink);
+                    $sourceLink = trim($sourceLink[1], '\'');
+                } else {
+                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
+                    $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
+                    $sourceLink = $sourceLink[0];
+                }
 
-        foreach (end($searchList) as $key => $row) {
-            $itemIndex = $key + 1;
-            #$itemIndex = 35; // debug
-            $html = $spider->setUrl($row['href'])
-                ->setReturnCharset()
-                ->get();
-            // div@class='tpc_content do_not_catch'
-            preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
-            $htmlStr = implode('', $content[0]);
-            $crawler = new Crawler($htmlStr);
-            $sourceTitle = $crawler->filterXPath('//h4')->text();
-            $sourceLink = 'src=http://www.baidu.com';
-            $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
-            if ($aCount) {
-                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
-                $sourceLink = explode('src=', $sourceLink);
-                $sourceLink = trim($sourceLink[1], '\'');
-            } else {
-                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
-                $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
-                $sourceLink = $sourceLink[0];
+                $dictStr .= '<tr>';
+                $dictStr .= '<td class="td-id"><span class="num">' . $itemIndex . '</span></td>';
+                $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
+                $dictStr .= '</tr>';
             }
-            $dictStr .= '<tr>';
-            $dictStr .= '<td class="td-id"><span class="num">' . $itemIndex . '</span></td>';
-            $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
-            $dictStr .= '</tr>';
+        } catch (\Exception $e) {
+            logWrite('catch Exception on '. $itemIndex);
+            logWrite('Exception info : '. $e->getTraceAsString());
         }
         $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
         if (!is_dir($saveDictPath)) {
@@ -229,45 +235,6 @@ if ($crawParams == 'web') {
         }
         file_put_contents($saveDictPath . 'search' . '.html', $dictStr, FILE_APPEND);
         logWrite('save the search dict success');
-    }
-    die;
-    if (!empty($data)) {
-        $htmlPath = $htmlStr = '';
-        $crawler = null;
-        $dictStr = '';
-        foreach ($data as $key => $row) {
-            $itemIndex = $key + 1;
-            #$itemIndex = 35; // debug
-            $html = $spider->setUrl($row['href'])
-                ->setReturnCharset()
-                ->get();
-            // div@class='tpc_content do_not_catch'
-            preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
-            $htmlStr = implode('', $content[0]);
-            $crawler = new Crawler($htmlStr);
-            $sourceTitle = $crawler->filterXPath('//h4')->text();
-            $sourceLink = 'src=http://www.baidu.com';
-            $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
-            if ($aCount) {
-                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
-                $sourceLink = explode('src=', $sourceLink);
-                $sourceLink = trim($sourceLink[1], '\'');
-            } else {
-                $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
-                $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
-                $sourceLink = $sourceLink[0];
-            }
-            $dictStr .= '<tr>';
-            $dictStr .= '<td class="td-id"><span class="num">' . $itemIndex . '</span></td>';
-            $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
-            $dictStr .= '</tr>';
-        }
-        $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
-        if (!is_dir($saveDictPath)) {
-            mkdir($saveDictPath, 0777, true);
-        }
-        file_put_contents($saveDictPath . $i . '.html', $dictStr, FILE_APPEND);
-        logWrite('save the ' . $i . ' dict success');
     }
 }
 

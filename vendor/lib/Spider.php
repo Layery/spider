@@ -201,7 +201,7 @@ class Spider
             return "url can not be null";
         }
         if ($this->convertCharset) {
-            $result = mb_convert_encoding($result, $this->convertCharset, 'GBK');
+            $result = mb_convert_encoding($result, $this->convertCharset);
         }
         return $result;
     }
