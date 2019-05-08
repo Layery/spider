@@ -1,9 +1,0 @@
-2019-05-06 18:27:12 begin catching the 1 page 
-2019-05-06 18:27:13 begin parse the 1 page 
-2019-05-06 18:27:13 parse the 1 page success count 16 item 
-2019-05-06 18:27:13 begin catching the 1 item  title: [楂樹妇鍥戒骇澶ф棗]娆у反锛屾搷鎴慬45P]聽[绌嶅垎+3]聽new[12345..30] 
-
-Warning: mkdir(): Invalid path in E:\www\spider\PageCraw.php on line 139
-
-Warning: file_put_contents(./crawFiles/dict/img/[高举国产大旗]欧巴，操我[45P]?[積分+3]?new[12345..30]/1.gif): failed to open stream: No such file or directory in E:\www\spider\PageCraw.php on line 147
-2019-05-06 18:27:36 save 1th success 

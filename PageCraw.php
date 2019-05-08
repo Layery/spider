@@ -28,9 +28,9 @@ $baseUrl = '';
 if ($crawParams == 'web') {
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
-    $baseUrl = 'https://hh.flexui.win/thread0806.php?fid=8';
-    $baseUrl = 'https://cl.wpio.xyz/thread0806.php?fid=16';
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=7'; // 技术讨论
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=16';
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=8';
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -62,13 +62,13 @@ $spider->setUnCheckSsl()
 
 
 if ($crawParams == 'img') {
-    for ($i = 1, $cnt = 1; $i <= $cnt; $i++) {
+    $data = [];
+    for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '&page=' . $i;
         logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
                 ->get();
 //        $html = file_get_contents('./debug.html');
-        $data = $imageList = [];
         $dom = new DOMDocument;
         @$dom->loadHTML($html);
         $crawler = new DOMXPath($dom);
@@ -90,9 +90,11 @@ if ($crawParams == 'img') {
                                         if (strpos($title, '↑') !== false) {
                                             continue;
                                         }
-                                        if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］/", $title)) {
+                                        if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］/", $title)) { // @ todo 不存在[p]的干掉
                                             continue;
                                         }
+                                        preg_match('/\[.*?\].*?\[\d+[pP]\]/is', $title, $m);
+                                        $title = $m[0];
                                         $href = $crawler->query('.//a', $td)->item(0)->attributes->getNamedItem('href')->textContent;
                                         $href = $hostInfo['dirname'] . '/' . $href;
                                         $_SESSION['data'][] = [
@@ -115,12 +117,20 @@ if ($crawParams == 'img') {
                 $htmlPath = $htmlStr = '';
                 $crawler = null;
                 foreach ($data as $key => $row) {
-                    $imgTitle = str_replace(['[', ']', '［', '］', ',', '，', '?', '？', '.', '（', '）', '?'], '', $row['title']);
-                    $imgTitle = substr($imgTitle, 0, 12);
+                    $imageList = [];
+                    $imgTitle = str_replace([',', '，','?', '？', '.', '（', '）', ' ', '　'], '', $row['title']);
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
+                    $continueStatus = false;
+                    $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . "/";
                     switch ($postTitle) {
                         case strpos($postTitle, '技術討論區') !== false:
+                            if (!is_dir($imagePath)) {
+                                @mkdir($imagePath, 0777, true);
+                            } else {
+                                logWrite($imgTitle. ' has download ready continue it');
+                                continue;
+                            }
                             logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
                             $html = $spider->setUrl($row['href'])->get();
                             preg_match_all('/\<img.*?data-src=.*?\>/is', $html, $m);
@@ -129,20 +139,31 @@ if ($crawParams == 'img') {
                             }
                             break;
                         default:
+                            if (strpos($imgTitle, '歐') !== false) {
+                                $continueStatus = true;
+                                continue;
+                            }
+                            if (!is_dir($imagePath)) {
+                                @mkdir($imagePath, 0777, true);
+                            } else {
+                                logWrite($imgTitle. ' has download ready continue it');
+                                continue;
+                            }
                             logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
                             $html = $spider->setUrl($row['href'])->get();
-                            @preg_match_all("/<input.*?type=[\'|\"]image[\'|\"]>/", $html, $m);
-//                            preg_match_all("/<input.*?type=\"image\">/", $html, $m);
+                            preg_match_all('/\<input.*?type=[\'\"]image[\'\"]\>/is', $html, $m);
                             $imageList = $m[0];
                             break;
                     }
-                    $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . "/";
-                    if (!is_dir($imagePath)) {
-                        @mkdir($imagePath, 0777, true);
-                    }
+                    if ($continueStatus) continue;
 
+                    $countImage = count($imageList);
                     foreach ($imageList as $imgIndex => $image) {
                         $imgIndex = $imgIndex + 1;
+                        if ($imgIndex > 30 && $countImage > 50) {
+                            logWrite('too many item to download break it');
+                            break;
+                        }
                         $image = explode('data-src=', $image);
                         $image = @preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];

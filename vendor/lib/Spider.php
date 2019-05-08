@@ -195,7 +195,7 @@ class Spider
             }
             $result = curl_exec($this->_ch);
             if (curl_errno($this->_ch)) {
-                throw new \Exception(curl_error($this->_ch));
+                return new \Exception(curl_error($this->_ch));
             }
         } else {
             return "url can not be null";
