@@ -38,12 +38,20 @@ class Spider
         }
     }
 
+    /**
+     * @param string $params
+     * @return self
+     */
     public function setUrl($params = '')
     {
         $this->url = $params;
         return $this;
     }
 
+    /**
+     * @param string $charset
+     * @return self
+     */
     public function setReturnCharset($charset = 'UTF-8')
     {
         if ($charset) {
@@ -78,6 +86,9 @@ class Spider
         return $this->header;
     }
 
+    /**
+     * @return self
+     */
     public function setXsrfToken()
     {
         $ch = curl_init();
@@ -95,6 +106,11 @@ class Spider
         return $this;
     }
 
+    /**
+     * @param string $dir asdf
+     * @param string $prefix
+     * @return self
+     */
     public function setCookie($dir = '', $prefix = 'cookie')
     {
         if (!is_dir($dir)) {

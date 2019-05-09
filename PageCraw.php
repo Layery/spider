@@ -28,9 +28,9 @@ $baseUrl = '';
 if ($crawParams == 'web') {
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
-    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=7'; // 技术讨论
-    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=16';
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=8';
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=16';
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=7'; // 技术讨论
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -47,6 +47,7 @@ $tmplPath = './vendor/tmpl/';
 $runTime = time();
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
+
 $spider->setUnCheckSsl()
     ->setHeader([
         'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -205,11 +206,12 @@ if ($crawParams == 'web') {
                                 if (strpos($title, '↑') !== false) {
                                     continue;
                                 }
-                                if (!preg_match("/阿姨|SM|sm|调教|变态|屎|另类/is", $title)) {
+                                if (!preg_match("/屎/is", $title)) {
 //                                if (!preg_match("/十|口|九/is", $title)) {
-                                    echo "continue title ". $title . "\n";
+                                    logWrite('continue title '. $title);
                                     continue;
                                 }
+
                                 $href = $crawler->query('.//a', $td)->item(0)->attributes->getNamedItem('href')->textContent;
                                 $href = $hostInfo['dirname'] . '/' . $href;
                                 $_SESSION['data'][] = [
@@ -224,6 +226,7 @@ if ($crawParams == 'web') {
         }
     }
     $data = $_SESSION['data'];
+    logWrite('found total items '. count($data));
     if (!empty($data)) {
         $htmlPath = $htmlStr = '';
         $crawler = null;
