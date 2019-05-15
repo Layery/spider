@@ -107,20 +107,17 @@ class Spider
     }
 
     /**
-     * @param string $dir asdf
-     * @param string $prefix
+     * @param string $file
      * @return self
      */
-    public function setCookie($dir = '', $prefix = 'cookie')
+    public function setCookie($file = '')
     {
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, 1);
+        if ($file) {
+            $this->cookie = 'XSRF-TOKEN=eyJpdiI6InJMRDBUQ1N1MEQ4cDZ3bytYaWtibmc9PSIsInZhbHVlIjoid25vYWRpUWJwZkw3Yks2VHFTZVBJYmVzWGNIbEF0SFlyMW41UlBDVWZLeFZqNjFWeW85Rkk2RnNaZ0F4Ym5kNSIsIm1hYyI6IjhmZjZkM2IzNGViZTRiODA0NmVkNDI5ZTYxY2YwZDRlYmFhYzUwMjdlNjZkMmYxM2MzMTUwZjAyMzNmYjUzN2EifQ%3D%3D';
+            $this->cookie = 'XSRF-TOKEN=eyJpdiI6IlFVaXE0bkpoQW1pS2hQSnM1ekF1U3c9PSIsInZhbHVlIjoiSFJ5bGhrdHpxaURtTTBQN3k4bHVId3hPUjN5cU1MeWM2VkUxRFUwUlJWNGM3RkhkdkZVRUNmc050VVBRYk1MXC8iLCJtYWMiOiJlMzcyZThmNDNjZDZiMTEzZmM2NzJjMDdhNjUxMGQ1Zjc1MGVjMDFmYWZiN2U3NGY5N2MxNzAzZmVhZjJlY2ZiIn0%3D; laravel_session=eyJpdiI6ImNuaGF3VSt2eVBUNVBIN3lmMXFjaVE9PSIsInZhbHVlIjoiXC95M1VqbDdaZUNvSVNVcjdaQTBPM2tcL1B1bEJSVHVmdElsN3R0cmNycG1EcEFoT2NNMGtBQndOVUVSemVFZ2plIiwibWFjIjoiYTA3ZTI5MzcwZDA5ZTM4MGU1NWM0ZTFmNmI1MjUzNjBjNDE5ZmVkNzVhOTIxMzk4YmQ2MzYxZDZhYmE2OTE1NiJ9';
+            $this->cookie = 'IESESSION=alive; pgv_pvi=3402590208; pgv_si=s127086592; tencentSig=1516524544; _qddamta_4006660033=2-0; _qddaz=QD.slkhqk.dcwcan.jvghkdc9; XSRF-TOKEN=eyJpdiI6InlBTUZNM094SW5sekJCc0JwQ3BCT2c9PSIsInZhbHVlIjoiUVdBWTR4bk1jQ3RhZUpkcW40cGdpXC83NWRHWWU1Sk1WaVZzN0JtWmVBbzBzVFZSc2d4QmVZWEJ3a1BkYlk4eloiLCJtYWMiOiI1MWI4MDM5MzA5MGRlNWUwYWU3ZWQyNDg2MDEzNmM5NGYxOTU4ZjE0ODA5ODljMTU2N2IyZTJjYTQ1NDBjZTVhIn0%3D; laravel_session=eyJpdiI6IkF5azhCT1UzTUxzalRFMTNcL1wvY04xUT09IiwidmFsdWUiOiJkSWFvb2tYOFJBZllrdDZQOTA4VHJGY2tvVUpQWFwvSkFuUUlLTnZcL0tiTlJkbEk0eEpINHQ2cWFxbkE4MTdyR3ciLCJtYWMiOiJkYWEzNGUwODBmNzg2OWM1OThhOGIyYTk4YTlkNDk5MTA0MDY3YTc3NmM5ZDczOWMyNTM4NjdlNmVmNGMyZTY5In0%3D; _qdda=2-1.1; _qddab=2-el5k5n.jvghkdcb';
+            curl_setopt($this->_ch, CURLOPT_COOKIE, $this->cookie);
         }
-        $tempFile = $dir . DIRECTORY_SEPARATOR . $prefix . '.tmp';
-        if (!is_file($tempFile)) {
-            exec('type null > ' . $tempFile);
-        }
-        $this->cookie = $tempFile;
         return $this;
     }
 
@@ -129,6 +126,7 @@ class Spider
         curl_setopt($this->_ch, CURLOPT_PORT, $port);
         return $this;
     }
+
 
 
     /**
@@ -155,7 +153,13 @@ class Spider
         return call_user_func([$this, 'curl'], $data, $timeOut);
     }
 
-    public function download()
+    /**
+     * download and save files
+     *
+     * @param string $fileName
+     * @return mixed
+     */
+    public function download($fileName = '')
     {
         curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, 1); // 获取的信息以文件流的形式返回
         curl_setopt($this->_ch, CURLOPT_HTTPGET, 1); // 获取的信息以文件流的形式返回
@@ -187,24 +191,17 @@ class Spider
     {
         $result = NULL;
         if ($this->url) {
+            if (strpos($this->url, 'https') !== false) {
+                curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书验证
+                curl_setopt($this->_ch, CURLOPT_SSL_VERIFYHOST, 0); // 跳过证书验证
+            }
             curl_setopt($this->_ch, CURLOPT_HEADER, false); // 设置头文件的信息作为数据流输出
             curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true); // 返回文件流形式而不直接输出
-            #curl_setopt($this->_ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
             #curl_setopt($this->_ch, CURLOPT_HTTPHEADER, array('Expect:'));
 //            curl_setopt($this->_ch, CURLOPT_PROXY, '127.0.0.1:8888'); // fiddler debug
             curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, $timeOut);
             curl_setopt($this->_ch, CURLOPT_URL, $this->url);
 
-            if ($this->cookie) {
-                if (!filesize($this->cookie)) {
-                    $this->getCookie($this->url, $data);
-                }
-                curl_setopt($this->_ch, CURLOPT_COOKIEFILE, $this->cookie);
-            }
-            if ($this->xSrfToken) {
-                $this->header[] = 'X-CSRF-TOKEN:cfIHBvog8OBLsyUnwWDkS5UaI3sgb3cZucL5lGtA'; //. $this->xSrfToken;
-                curl_setopt($this->_ch, CURLOPT_HTTPHEADER, $this->header);
-            }
             if ($data) {
                 $dataStr = http_build_query($data);
                 curl_setopt($this->_ch, CURLOPT_POSTFIELDS, $dataStr);

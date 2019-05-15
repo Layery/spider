@@ -21,7 +21,6 @@ use Symfony\Component\DomCrawler\Crawler;
 //    fwrite(STDOUT, iconv('utf-8', 'gbk', "请输入结束页: \n"));
 //    $end = trim(fgets(STDIN));
 //    fwrite(STDOUT, "Hello,$name"); //在终端回显输入
-
 $crawParams = isset($argv[1]) ? $argv[1] : 'web';
 $search = 'https://yandex.ru/search/?text=%E8%8D%89%E6%A6%B4%E7%A4%BE%E5%8C%BA';
 $baseUrl = '';
@@ -29,8 +28,8 @@ if ($crawParams == 'web') {
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=8';
-    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=16';
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=7'; // 技术讨论
+    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=16';
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -39,15 +38,15 @@ $crawPagePath = $crawRootPath . 'crawWeb/';
 $crawImgPath = $crawRootPath . 'crawImg/';
 $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
-$loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
-$loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 5;
-$filter = (isset($argv[4]) && $argv[4]) ? $argv[4] : '';
+$filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
+$loopStart = (isset($argv[3]) && $argv[3]) ? $argv[3] : 1;
+$loopEnd = (isset($argv[4]) && $argv[4]) ? $argv[4] : 400;
+
 $tmplPath = './vendor/tmpl/';
 
 $runTime = time();
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
-
 $spider->setUnCheckSsl()
     ->setHeader([
         'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -57,8 +56,9 @@ $spider->setUnCheckSsl()
         'pragma' => 'no-cache',
         'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
         'upgrade-insecure-requests' => '1',
-        'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
-//        'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 YaBrowser/18.10.2.163 Yowser/2.5 Safari/537.36'
+        'referer' => 'https://hs.etet.men/index.php',
+        'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
+        'cookie' => '__cfduid=d09ac250ebde0fbcb431d731507a0a2c51557469056; UM_distinctid=16aa065887f0-03756867189336-3c365402-13c680-16aa0658880295; PHPSESSID=27bh1iji2ppctcpfubga0tm1q6; serverInfo=hs.etet.men%7C111.198.24.176; 227c9_lastvisit=0%091557730159%09%2Fnotice.php%3F; CNZZDATA950900=cnzz_eid%3D1605442500-1557467220-https%253A%252F%252Fhs.etet.men%252F%26ntime%3D1557726896'
     ]);
 
 
@@ -69,6 +69,7 @@ if ($crawParams == 'img') {
         logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
                 ->get();
+        exit($html);
 //        $html = file_get_contents('./debug.html');
         $dom = new DOMDocument;
         @$dom->loadHTML($html);
@@ -168,8 +169,8 @@ if ($crawParams == 'img') {
                         $image = explode('data-src=', $image);
                         $image = @preg_match('/http.*?\.(gif|jpg|png|jpeg)/', $image[1], $e);
                         $ext = $e[1];
-                        $res = file_get_contents($e[0]);
-                        file_put_contents($imagePath . $imgIndex . '.' . $ext, $res);
+                        $res = @file_get_contents($e[0]);
+                        @file_put_contents($imagePath . $imgIndex . '.' . $ext, $res);
                         logWrite('save ' . $imgIndex . 'th' . ' success');
                     }
                 }
@@ -206,15 +207,12 @@ if ($crawParams == 'web') {
                                 if (strpos($title, '↑') !== false) {
                                     continue;
                                 }
-                                if (!preg_match("/屎/is", $title)) {
-//                                if (!preg_match("/十|口|九/is", $title)) {
-                                    logWrite('continue title '. $title);
+                                if ($filter && !preg_match("/". $filter ."/is", mb_convert_encoding($title, 'gbk'))) {
                                     continue;
                                 }
-
                                 $href = $crawler->query('.//a', $td)->item(0)->attributes->getNamedItem('href')->textContent;
                                 $href = $hostInfo['dirname'] . '/' . $href;
-                                $_SESSION['data'][] = [
+                                $data[] = [
                                     'href' => $href,
                                     'title' => $title
                                 ];
@@ -225,7 +223,6 @@ if ($crawParams == 'web') {
             }
         }
     }
-    $data = $_SESSION['data'];
     logWrite('found total items '. count($data));
     if (!empty($data)) {
         $htmlPath = $htmlStr = '';
