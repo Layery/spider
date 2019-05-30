@@ -58,7 +58,7 @@ $spider->setUnCheckSsl()
         'upgrade-insecure-requests' => '1',
         'referer' => 'https://hs.etet.men/index.php',
         'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
-        'cookie' => '__cfduid=d09ac250ebde0fbcb431d731507a0a2c51557469056; UM_distinctid=16aa065887f0-03756867189336-3c365402-13c680-16aa0658880295; PHPSESSID=27bh1iji2ppctcpfubga0tm1q6; serverInfo=hs.etet.men%7C111.198.24.176; 227c9_lastvisit=0%091557730159%09%2Fnotice.php%3F; CNZZDATA950900=cnzz_eid%3D1605442500-1557467220-https%253A%252F%252Fhs.etet.men%252F%26ntime%3D1557726896'
+        'cookie' => '__cfduid=d09ac250ebde0fbcb431d731507a0a2c51557469056; UM_distinctid=16aa065887f0-03756867189336-3c365402-13c680-16aa0658880295; PHPSESSID=lh915ar6smpbfnr2gbslhgtas2; serverInfo=hs.etet.men%7C111.198.24.176; 227c9_lastvisit=0%091558418792%09%2Fnotice.php%3F; CNZZDATA950900=cnzz_eid%3D1605442500-1557467220-https%253A%252F%252Fhs.etet.men%252F%26ntime%3D1558417173'
     ]);
 
 
@@ -69,7 +69,6 @@ if ($crawParams == 'img') {
         logWrite('begin catching the ' . $i . ' page');
         $html = $spider->setUrl($url)
                 ->get();
-        exit($html);
 //        $html = file_get_contents('./debug.html');
         $dom = new DOMDocument;
         @$dom->loadHTML($html);

@@ -142,9 +142,9 @@ class Spider
         return $this;
     }
 
-    public function get($data = [])
+    public function get($data = [], $timeOut = 30)
     {
-        return call_user_func([$this, 'curl'], $data);
+        return call_user_func([$this, 'curl'], $data, $timeOut);
     }
 
     public function post($data = [], $timeOut = 30)
@@ -187,6 +187,46 @@ class Spider
         curl_close($ch);
     }
 
+    /**
+     * 获取curl结果, 配合curl方法可无限次跳转抓取
+     *
+     * @return bool|Exception/mixed
+     */
+    protected function getCurlResult()
+    {
+        $result = curl_exec($this->_ch);
+        if (curl_errno($this->_ch)) {
+            return new \Exception(curl_error($this->_ch));
+        }
+        $curlInfo = curl_getinfo($this->_ch);
+        switch ($curlInfo['http_code']) {
+            case 200:
+                preg_match('/\<meta.*?http-equiv=[\'"]refresh[\'"].*?(content=[\'"].*?[\'"])\>/is', $result, $m);
+                if (!empty($m) && $m[0]) { // 存在refresh
+                    preg_match('/(?<=[\'\"]).*?(?=[\'\"])/is', $m[1], $refreshUrl);
+                    $refreshUrl = explode('=', $refreshUrl[0]);
+                    $refreshUrl = $refreshUrl[1];
+                    $host = pathinfo($this->url);
+                    $refreshUrl = $host['dirname']. '/' . $refreshUrl;
+                    $result = $this->setUrl($refreshUrl)->setHeader()->curl();
+                }
+                break;
+            case 302:
+                $redirectUrl = $curlInfo['redirect_url'];
+                $result = $this->setUrl($redirectUrl)->setHeader()->curl();
+                break;
+            case 301:
+                break;
+            case 404:
+                $result = 'has null page result, http code 404';
+                break;
+            default:
+                break;
+        }
+
+        return $result;
+    }
+
     protected function curl($data = [], $timeOut = 30)
     {
         $result = NULL;
@@ -201,15 +241,13 @@ class Spider
 //            curl_setopt($this->_ch, CURLOPT_PROXY, '127.0.0.1:8888'); // fiddler debug
             curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, $timeOut);
             curl_setopt($this->_ch, CURLOPT_URL, $this->url);
+//            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true); // 自动追踪302跳转
 
             if ($data) {
                 $dataStr = http_build_query($data);
                 curl_setopt($this->_ch, CURLOPT_POSTFIELDS, $dataStr);
             }
-            $result = curl_exec($this->_ch);
-            if (curl_errno($this->_ch)) {
-                return new \Exception(curl_error($this->_ch));
-            }
+            $result = $this->getCurlResult();
         } else {
             return "url can not be null";
         }
