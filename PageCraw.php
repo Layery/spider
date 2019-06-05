@@ -25,7 +25,7 @@ $crawParams = isset($argv[1]) ? $argv[1] : 'web';
 $search = 'https://yandex.ru/search/?text=%E8%8D%89%E6%A6%B4%E7%A4%BE%E5%8C%BA';
 $baseUrl = '';
 if ($crawParams == 'web') {
-    $baseUrl = 'https://hs.etet.men/thread0806.php?fid=22';
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=8';
     $baseUrl = 'https://hs.etet.men/thread0806.php?fid=7'; // 技术讨论
@@ -40,16 +40,17 @@ $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
 $filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
 $loopStart = (isset($argv[3]) && $argv[3]) ? $argv[3] : 1;
-$loopEnd = (isset($argv[4]) && $argv[4]) ? $argv[4] : 400;
+$loopEnd = (isset($argv[4]) && $argv[4]) ? $argv[4] : 1;
 
 $tmplPath = './vendor/tmpl/';
 
 $runTime = time();
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
-$spider->setUnCheckSsl()
-    ->setHeader([
+$spider->setHeader([
+        'Host' => 'private70.ghuws.win',
         'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Upgrade-Insecure-Requests' => '1',
         #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
         'accept-language' => 'zh-CN,zh;q=0.9',
         'cache-control' => 'no-cache',
@@ -58,7 +59,7 @@ $spider->setUnCheckSsl()
         'upgrade-insecure-requests' => '1',
         'referer' => 'https://hs.etet.men/index.php',
         'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
-        'cookie' => '__cfduid=d09ac250ebde0fbcb431d731507a0a2c51557469056; UM_distinctid=16aa065887f0-03756867189336-3c365402-13c680-16aa0658880295; PHPSESSID=lh915ar6smpbfnr2gbslhgtas2; serverInfo=hs.etet.men%7C111.198.24.176; 227c9_lastvisit=0%091558418792%09%2Fnotice.php%3F; CNZZDATA950900=cnzz_eid%3D1605442500-1557467220-https%253A%252F%252Fhs.etet.men%252F%26ntime%3D1558417173'
+        'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
     ]);
 
 
@@ -187,38 +188,24 @@ if ($crawParams == 'web') {
     $_SESSION['data'] = [];
     for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '&page=' . $i;
-        $html = $spider->setUrl($url)
-//            ->setReturnCharset()
-            ->post();
-        $dom = new DOMDocument;
-        @$dom->loadHTML($html);
-        $crawler = new DOMXPath($dom);
-        $tableDom = $crawler->query('//div[@class="t"][2]/table');
-        foreach ($tableDom as $table) {
-            $trDom = $crawler->query('//tr[contains(@class,"tr3 t_one tac")]', $table);
-            if ($trDom->length) {
-                foreach ($trDom as $tr) {
-                    $tdDom = $crawler->query('./td', $tr);
-                    if ($tdDom->length >= 5) {
-                        foreach ($tdDom as $td) {
-                            if ($td instanceof DOMElement && $td->attributes->getNamedItem('class')->nodeValue == 'tal') {
-                                $title = preg_replace('/\s/', '', $td->textContent);
-                                if (strpos($title, '↑') !== false) {
-                                    continue;
-                                }
-                                if ($filter && !preg_match("/". $filter ."/is", mb_convert_encoding($title, 'gbk'))) {
-                                    continue;
-                                }
-                                $href = $crawler->query('.//a', $td)->item(0)->attributes->getNamedItem('href')->textContent;
-                                $href = $hostInfo['dirname'] . '/' . $href;
-                                $data[] = [
-                                    'href' => $href,
-                                    'title' => $title
-                                ];
-                            }
-                        }
-                    }
+        $html = $spider->setUrl($url)->get();
+        $crawler = new Crawler($html);
+        $mainList = $crawler->filterXPath('//div[@class="list t_one"]');
+        foreach ($mainList as $node) {
+            if ($node->getAttribute('class')) {
+                $title = preg_replace('/\s/', '', $node->textContent);
+                if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) {
+                    continue;
                 }
+                preg_match('/\[.*?\d+\:\d+\]/is', $title, $m);
+                $title = $m[0];
+                $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
+                $href = substr($href, 16);
+                $href = $hostInfo['dirname'] . '/'. $href;
+                $data[] = [
+                    'href' => $href,
+                    'title' => $title
+                ];
             }
         }
     }
@@ -229,23 +216,19 @@ if ($crawParams == 'web') {
         $dictStr = '';
         try {
             foreach ($data as $key => $row) {
-                #$itemIndex = 35; // debug
                 $html = $spider->setUrl($row['href'])
-                    ->setReturnCharset()
+                    ->setFollowLocation()
                     ->get();
-                // div@class='tpc_content do_not_catch'
-                preg_match_all("/<h4.*?>.*?<\/h4>|<div class=\"tpc_content do_not_catch\">.*?<\/div>/s", $html, $content);
-                $htmlStr = implode('', $content[0]);
-                $crawler = new Crawler($htmlStr);
+                $crawler = new Crawler($html);
                 $sourceTitle = $row['title'];
                 $sourceLink = 'src=http://www.baidu.com';
-                $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->count();
+                $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]/a[2]')->count();
                 if ($aCount) {
-                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]/a[2]')->attr('onclick');
+                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]/a[2]')->attr('onclick');
                     $sourceLink = explode('src=', $sourceLink);
                     $sourceLink = trim($sourceLink[1], '\'');
                 } else {
-                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_content")]')->text();
+                    $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]')->text();
                     $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
                     $sourceLink = $sourceLink[0];
                 }

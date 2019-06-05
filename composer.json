@@ -1,13 +1,5 @@
 {
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Youpie/simple-html-dom"
-        }
-    ],
     "require": {
-        "simple-html-dom/simple-html-dom": "*",
-        "guzzlehttp/guzzle": "^6.3",
         "symfony/dom-crawler": "^3.4"
     }
 }

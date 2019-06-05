@@ -27,6 +27,8 @@ class Spider
 
     protected $cookie;
 
+    protected $followLocation = false;
+
     protected $convertCharset;
 
     protected $xSrfToken;
@@ -128,7 +130,6 @@ class Spider
     }
 
 
-
     /**
      * 设置不验证ssl
      *
@@ -161,13 +162,49 @@ class Spider
      */
     public function download($fileName = '')
     {
-        curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, 1); // 获取的信息以文件流的形式返回
-        curl_setopt($this->_ch, CURLOPT_HTTPGET, 1); // 获取的信息以文件流的形式返回
-        curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($this->_ch, CURLOPT_DNS_USE_GLOBAL_CACHE, false);
-        curl_setopt($this->_ch, CURLOPT_DNS_CACHE_TIMEOUT, 2);
-        curl_setopt($this->_ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-        return call_user_func([$this, 'curl'], []);
+        return call_user_func([$this, 'curl'], $fileName);
+        if (($fp = fopen($fileName, "wb")) === false) {
+            throw new Exception("fopen error for filename $fileName");
+        }
+        curl_setopt($this->_ch, CURLOPT_FILE, $fp);
+        curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($this->_ch);
+        $eurl = curl_getinfo($this->_ch, CURLINFO_EFFECTIVE_URL);
+        p($eurl);
+    }
+
+    public function downloadFile($fileName, $verbose = false)
+    {
+
+        if (substr($fileName, -1) == '/') {
+            $targetDir = $fileName;
+            $fileName = tempnam(sys_get_temp_dir(), 'c_');
+        }
+        if (($fp = fopen($fileName, "wb")) === false) {
+            throw new Exception("fopen error for filename $fileName");
+        }
+        curl_setopt($this->_ch, CURLOPT_FILE, $fp);
+        curl_setopt($this->_ch, CURLOPT_BINARYTRANSFER, true);
+        if (curl_exec($this->_ch) === false) {
+            p(curl_error($this->_ch));
+            fclose($fp);
+            unlink($fileName);
+            throw new Exception("curl_exec error for url ". $this->url);
+        } elseif (isset($targetDir)) {
+            $eurl = curl_getinfo($this->_ch, CURLINFO_EFFECTIVE_URL);
+            p($eurl);
+            preg_match('#^.*/(.+)$#', $eurl, $match);
+            fclose($fp);
+            rename($fileName, "$targetDir{$match[1]}");
+            $fileName = "$targetDir{$match[1]}";
+        } else {
+            fclose($fp);
+        }
+        curl_close($this->_ch);
+        if ($verbose === true) {
+            echo "Done.\n";
+        }
+        return $fileName;
     }
 
     protected function getCookie($url = '', $post = [])
@@ -196,7 +233,8 @@ class Spider
     {
         $result = curl_exec($this->_ch);
         if (curl_errno($this->_ch)) {
-            return new \Exception(curl_error($this->_ch));
+            $error = curl_error($this->_ch);
+            return new Exception($error);
         }
         $curlInfo = curl_getinfo($this->_ch);
         switch ($curlInfo['http_code']) {
@@ -207,7 +245,7 @@ class Spider
                     $refreshUrl = explode('=', $refreshUrl[0]);
                     $refreshUrl = $refreshUrl[1];
                     $host = pathinfo($this->url);
-                    $refreshUrl = $host['dirname']. '/' . $refreshUrl;
+                    $refreshUrl = $host['dirname'] . '/' . $refreshUrl;
                     $result = $this->setUrl($refreshUrl)->setHeader()->curl();
                 }
                 break;
@@ -227,6 +265,17 @@ class Spider
         return $result;
     }
 
+    /**
+     * 开启自动跟踪页面跳转
+     *
+     * @return self
+     */
+    public function setFollowLocation()
+    {
+        $this->followLocation = true;
+        return $this;
+    }
+
     protected function curl($data = [], $timeOut = 30)
     {
         $result = NULL;
@@ -238,7 +287,8 @@ class Spider
             curl_setopt($this->_ch, CURLOPT_HEADER, false); // 设置头文件的信息作为数据流输出
             curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true); // 返回文件流形式而不直接输出
             #curl_setopt($this->_ch, CURLOPT_HTTPHEADER, array('Expect:'));
-//            curl_setopt($this->_ch, CURLOPT_PROXY, '127.0.0.1:8888'); // fiddler debug
+            #curl_setopt($this->_ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC); //代理认证模式
+            #curl_setopt($this->_ch, CURLOPT_PROXY, '117.90.3.36:9000'); // fiddler debug
             curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, $timeOut);
             curl_setopt($this->_ch, CURLOPT_URL, $this->url);
 //            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true); // 自动追踪302跳转
@@ -247,7 +297,11 @@ class Spider
                 $dataStr = http_build_query($data);
                 curl_setopt($this->_ch, CURLOPT_POSTFIELDS, $dataStr);
             }
-            $result = $this->getCurlResult();
+            if ($this->followLocation) {
+                $result = $this->getCurlResult();
+            } else {
+                $result = curl_exec($this->_ch);
+            }
         } else {
             return "url can not be null";
         }
