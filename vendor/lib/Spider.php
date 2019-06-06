@@ -162,49 +162,23 @@ class Spider
      */
     public function download($fileName = '')
     {
-        return call_user_func([$this, 'curl'], $fileName);
-        if (($fp = fopen($fileName, "wb")) === false) {
-            throw new Exception("fopen error for filename $fileName");
+        set_time_limit (3 * 60); // 设置超时时间
+        try {
+            $source = fopen($this->url, "rb"); // 远程下载文件，二进制模式
+            if ($source) { // 如果下载成功
+                $downloadFile = fopen($fileName, "wb"); // 如果没有则生成本地文件
+                if ($downloadFile) {
+                    while (!feof($source)) { // 判断附件写入是否完整
+                        fwrite($downloadFile, fread($source, 1024 * 11)); // 没有写完就继续
+                    }
+                }
+            }
+            fclose($source); // 关闭远程文件
+            fclose($downloadFile); // 关闭本地文件
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
         }
-        curl_setopt($this->_ch, CURLOPT_FILE, $fp);
-        curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($this->_ch);
-        $eurl = curl_getinfo($this->_ch, CURLINFO_EFFECTIVE_URL);
-        p($eurl);
-    }
-
-    public function downloadFile($fileName, $verbose = false)
-    {
-
-        if (substr($fileName, -1) == '/') {
-            $targetDir = $fileName;
-            $fileName = tempnam(sys_get_temp_dir(), 'c_');
-        }
-        if (($fp = fopen($fileName, "wb")) === false) {
-            throw new Exception("fopen error for filename $fileName");
-        }
-        curl_setopt($this->_ch, CURLOPT_FILE, $fp);
-        curl_setopt($this->_ch, CURLOPT_BINARYTRANSFER, true);
-        if (curl_exec($this->_ch) === false) {
-            p(curl_error($this->_ch));
-            fclose($fp);
-            unlink($fileName);
-            throw new Exception("curl_exec error for url ". $this->url);
-        } elseif (isset($targetDir)) {
-            $eurl = curl_getinfo($this->_ch, CURLINFO_EFFECTIVE_URL);
-            p($eurl);
-            preg_match('#^.*/(.+)$#', $eurl, $match);
-            fclose($fp);
-            rename($fileName, "$targetDir{$match[1]}");
-            $fileName = "$targetDir{$match[1]}";
-        } else {
-            fclose($fp);
-        }
-        curl_close($this->_ch);
-        if ($verbose === true) {
-            echo "Done.\n";
-        }
-        return $fileName;
+        return true;
     }
 
     protected function getCookie($url = '', $post = [])

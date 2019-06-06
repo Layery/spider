@@ -38,6 +38,7 @@ $crawPagePath = $crawRootPath . 'crawWeb/';
 $crawImgPath = $crawRootPath . 'crawImg/';
 $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
+$runTimePath = './runtime/';
 $filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
 $loopStart = (isset($argv[3]) && $argv[3]) ? $argv[3] : 1;
 $loopEnd = (isset($argv[4]) && $argv[4]) ? $argv[4] : 1;
@@ -62,16 +63,18 @@ $spider->setHeader([
         'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
     ]);
 
-$crawParams = 'img';
+
 
 if ($crawParams == 'img') {
     $data = [];
+    $urlInfo = parse_url($baseUrl);
+    $urlType = substr($urlInfo['query'], 4);
     for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '&page=' . $i;
         logWrite('begin catching the ' . $i . ' page');
-//        $html = $spider->setUrl($url)
-//                ->get();
-        $html = file_get_contents('./debug.html');
+        $html = $spider->setUrl($url)
+                ->get();
+        #$html = file_get_contents($runTimePath . 'fid='. $urlType. '.html');
         $crawler = new Crawler($html);
         $postTitle = $crawler->filterXPath('//title')->text();
         try {
@@ -80,15 +83,10 @@ if ($crawParams == 'img') {
             foreach ($mainList as $node) {
                 if ($node->getAttribute('class')) {
                     $title = preg_replace('/\s/', '', $node->textContent);
-                    if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) {
-                        continue;
-                    }
-                    if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］|图|精品/is", $title)) { // @ todo 不存在[p]的干掉
-                        continue;
-                    }
-                    preg_match('/\[.*?\].*?\[\d+[pP]\]/is', $title, $m);
-                    $title = $m[0];
-
+                    if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) continue;
+                    if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］|图|精品/is", $title)) continue;
+                    if ($urlType == 8 && strpos($title, '歐')) continue;
+                    $title = $node->getElementsByTagName('a')->item(0)->nodeValue;
                     $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
                     $href = substr($href, 16);
                     $href = $hostInfo['dirname'] . '/'. $href;
@@ -98,8 +96,6 @@ if ($crawParams == 'img') {
                     ];
                 }
             }
-            file_put_contents('./debug', implode("\n", $temp));
-            die;
             $totalItem = count($data);
             logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
             if (!empty($data)) {
@@ -112,44 +108,26 @@ if ($crawParams == 'img') {
                     #$itemIndex = 76; // debug
                     $continueStatus = false;
                     $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . "/";
-                    switch ($postTitle) {
-                        case strpos($postTitle, '技術討論區') !== false:
-                            if (!is_dir($imagePath)) {
-                                @mkdir($imagePath, 0777, true);
-                            } else {
-                                logWrite($imgTitle. ' has download ready continue it');
-                                continue;
-                            }
-                            logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
-                            $html = $spider->setUrl($row['href'])->get();
-                            preg_match_all('/\<img.*?data-src=.*?\>/is', $html, $m);
-                            foreach ($m[0] as $href) {
-                                $imageList[] = $href;
-                            }
-                            break;
-                        default:
-                            if (strpos($imgTitle, '歐') !== false) {
-                                $continueStatus = true;
-                                continue;
-                            }
-                            if (!is_dir($imagePath)) {
-                                @mkdir($imagePath, 0777, true);
-                            } else {
-                                logWrite($imgTitle. ' has download ready continue it');
-                                continue;  // debug 先不跳过
-                            }
-                            logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
-                            $html = $spider->setUrl($row['href'])->get();
-//                            $html = file_get_contents('./child.html');
-                            $crawler = new Crawler($html);
-                            $imageDom = $crawler->filterXPath('//div/input[@type="image"]');
-                            foreach ($imageDom as $imgNode) {
-                                $imageList[] = $imgNode->getAttribute('data-src');
-                            }
-                            break;
+                    if (!is_dir($imagePath)) {
+                        @mkdir($imagePath, 0777, true);
+                    } else {
+                        logWrite($imgTitle. ' has download ready continue it');
+                        continue;
                     }
-                    if ($continueStatus) continue;
+                    logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
+                    $html = $spider->setUrl($row['href'])->get();
+                    #$html = file_get_contents($runTimePath. $urlType . '-child.html');
+                    $crawler = new Crawler($html);
+                    if ($urlType == 7) {
+                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]/img');
+                    } else {
+                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]//input');
+                    }
+                    foreach ($imgListDom as $imageNode) {
+                        $imageList[] = $imageNode->getAttribute('data-src');
+                    }
 
+                    if ($continueStatus) continue;
                     $countImage = count($imageList);
                     foreach ($imageList as $imgIndex => $image) {
                         $imgIndex = $imgIndex + 1;
@@ -158,8 +136,8 @@ if ($crawParams == 'img') {
                             break;
                         }
                         $ext = substr($image, -4);
-                        $res = @file_get_contents($image);
-                        @file_put_contents($imagePath . $imgIndex . $ext, $res);
+                        $downloadFile = $imagePath . $imgIndex . $ext;
+                        $spider->setUrl($image)->download($downloadFile);
                         logWrite('save ' . $imgIndex . 'th' . ' success');
                     }
                 }
