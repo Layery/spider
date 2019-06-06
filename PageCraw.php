@@ -28,8 +28,8 @@ if ($crawParams == 'web') {
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=8';
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=16';
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -62,7 +62,6 @@ $spider->setHeader([
         'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
     ]);
 
-
 $crawParams = 'img';
 
 if ($crawParams == 'img') {
@@ -70,8 +69,9 @@ if ($crawParams == 'img') {
     for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '&page=' . $i;
         logWrite('begin catching the ' . $i . ' page');
-        $html = $spider->setUrl($url)
-                ->get();
+//        $html = $spider->setUrl($url)
+//                ->get();
+        $html = file_get_contents('./debug.html');
         $crawler = new Crawler($html);
         $postTitle = $crawler->filterXPath('//title')->text();
         try {
@@ -83,11 +83,12 @@ if ($crawParams == 'img') {
                     if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) {
                         continue;
                     }
-                    if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］/", $title)) { // @ todo 不存在[p]的干掉
+                    if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］|图|精品/is", $title)) { // @ todo 不存在[p]的干掉
                         continue;
                     }
                     preg_match('/\[.*?\].*?\[\d+[pP]\]/is', $title, $m);
                     $title = $m[0];
+
                     $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
                     $href = substr($href, 16);
                     $href = $hostInfo['dirname'] . '/'. $href;
@@ -97,6 +98,8 @@ if ($crawParams == 'img') {
                     ];
                 }
             }
+            file_put_contents('./debug', implode("\n", $temp));
+            die;
             $totalItem = count($data);
             logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
             if (!empty($data)) {
