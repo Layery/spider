@@ -39,11 +39,11 @@ $crawImgPath = $crawRootPath . 'crawImg/';
 $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
 $runTimePath = './runtime/';
-$filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
-$loopStart = (isset($argv[3]) && $argv[3]) ? $argv[3] : 1;
-$loopEnd = (isset($argv[4]) && $argv[4]) ? $argv[4] : 1;
-
 $tmplPath = './vendor/tmpl/';
+
+$loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
+$loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
+$filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
 
 $runTime = time();
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
@@ -166,6 +166,9 @@ if ($crawParams == 'web') {
                 }
                 preg_match('/\[.*?\d+\:\d+\]/is', $title, $m);
                 $title = $m[0];
+                if ($filter && !preg_match('/'. $filter . '/is', mb_convert_encoding($title, 'gbk'))) {
+                    continue;
+                }
                 $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
                 $href = substr($href, 16);
                 $href = $hostInfo['dirname'] . '/'. $href;
