@@ -154,22 +154,55 @@ class Spider
         return call_user_func([$this, 'curl'], $data, $timeOut);
     }
 
+    public function download_bak($fileName = '', $timeOut = 0)
+    {
+        set_time_limit($timeOut); // 设置超时时间
+        $path = pathinfo($fileName);
+        if (!is_dir($path['dirname'])) {
+            mkdir($path['dirname'], 0777, 1);
+        }
+        try {
+            $fp = fopen($fileName, 'w+');
+            curl_setopt($this->_ch, CURLOPT_URL, $this->url);
+            if (strpos($this->url, 'https') !== false) {
+                curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书验证
+                curl_setopt($this->_ch, CURLOPT_SSL_VERIFYHOST, 0); // 跳过证书验证
+            }
+            curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 7200);
+            curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true); // 返回文件流形式而不直接输出
+            curl_setopt($this->_ch, CURLOPT_FILE, $fp);
+            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
+            $data = curl_exec($this->_ch);
+            p($data);
+            fclose($fp);
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+        return true;
+    }
+
+
     /**
      * download and save files
      *
      * @param string $fileName
+     * @param string $timeout
      * @return mixed
      */
-    public function download($fileName = '')
+    public function download($fileName = '', $timeOut = 0)
     {
-        set_time_limit (3 * 60); // 设置超时时间
+        set_time_limit($timeOut); // 设置超时时间
+        $path = pathinfo($fileName);
+        if (!is_dir($path['dirname'])) {
+            mkdir($path['dirname'], 0777, 1);
+        }
         try {
             $source = fopen($this->url, "rb"); // 远程下载文件，二进制模式
             if ($source) { // 如果下载成功
                 $downloadFile = fopen($fileName, "wb"); // 如果没有则生成本地文件
                 if ($downloadFile) {
                     while (!feof($source)) { // 判断附件写入是否完整
-                        fwrite($downloadFile, fread($source, 1024 * 11)); // 没有写完就继续
+                        fwrite($downloadFile, fread($source, intval(1024*1024*4))); // 没有写完就继续
                     }
                 }
             }

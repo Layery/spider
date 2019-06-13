@@ -12,8 +12,8 @@ include 'E:/www/global';
 use Symfony\Component\DomCrawler\Crawler;
 
 $url = 'https://www.yinduowang.com/index/ajaxsignin';
-$url = 'https://kkembed.kdwshell.com/get_file/3/a7b22583cac2638c053858d31ea5346a/61000/61532/61532.mp4';
-$url = 'https://wannianrili.51240.com/ajax/?q=2019-08&v=19021213';
+$url = 'https://dldir1.qq.com/qqfile/qq/PCQQ9.1.3/25332/QQ9.1.3.25332.exe';
+$url = 'https://jaist.dl.sourceforge.net/project/deepin/15.10/deepin-15.10-amd64.iso';
 $crawRootPath = './crawFiles/yinduo/';
 
 set_time_limit(0); // script keep running;
@@ -33,7 +33,7 @@ $rs = $spider->setUrl($url)
                  'upgrade-insecure-requests' => '1',
                  'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'
              ])
-             ->post();
+             ->download('F:/linux/deepin-15.10-amd64.iso');
 
 exit($rs);
 
