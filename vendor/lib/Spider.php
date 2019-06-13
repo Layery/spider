@@ -192,22 +192,25 @@ class Spider
     public function download($fileName = '', $timeOut = 0)
     {
         set_time_limit($timeOut); // 设置超时时间
+        ini_set('memory_limit', '1048M');
         $path = pathinfo($fileName);
         if (!is_dir($path['dirname'])) {
             mkdir($path['dirname'], 0777, 1);
         }
         try {
             $source = fopen($this->url, "rb"); // 远程下载文件，二进制模式
+            #$head = get_headers($this->url, true);
+            #$fileSize = $head['Content-Length'];
             if ($source) { // 如果下载成功
-                $downloadFile = fopen($fileName, "wb"); // 如果没有则生成本地文件
-                if ($downloadFile) {
+                $fp = fopen($fileName, "wb"); // 打开本地的一个句柄, 如果没有则生成
+                if ($fp) {
                     while (!feof($source)) { // 判断附件写入是否完整
-                        fwrite($downloadFile, fread($source, intval(1024*1024*4))); // 没有写完就继续
+                        fwrite($fp, fread($source, 1000)); // 没有写完就继续
                     }
                 }
             }
             fclose($source); // 关闭远程文件
-            fclose($downloadFile); // 关闭本地文件
+            fclose($fp); // 关闭本地文件
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
         }
