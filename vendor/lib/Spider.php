@@ -168,12 +168,11 @@ class Spider
                 curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书验证
                 curl_setopt($this->_ch, CURLOPT_SSL_VERIFYHOST, 0); // 跳过证书验证
             }
-            curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 7200);
+    //            curl_setopt($this->_ch, CURLOPT_RANGE, '300');
+            curl_setopt($this->_ch, CURLOPT_BINARYTRANSFER, true);
             curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true); // 返回文件流形式而不直接输出
             curl_setopt($this->_ch, CURLOPT_FILE, $fp);
-            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
             $data = curl_exec($this->_ch);
-            p($data);
             fclose($fp);
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
@@ -200,12 +199,11 @@ class Spider
         try {
             $source = fopen($this->url, "rb"); // 远程下载文件，二进制模式
             #$head = get_headers($this->url, true);
-            #$fileSize = $head['Content-Length'];
             if ($source) { // 如果下载成功
                 $fp = fopen($fileName, "wb"); // 打开本地的一个句柄, 如果没有则生成
                 if ($fp) {
                     while (!feof($source)) { // 判断附件写入是否完整
-                        fwrite($fp, fread($source, 1000)); // 没有写完就继续
+                        fwrite($fp, fread($source, 1024*10), 1024*10); // 没有写完就继续
                     }
                 }
             }
