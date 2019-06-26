@@ -206,9 +206,9 @@ class Spider
                         fwrite($fp, fread($source, 1024*10), 1024*10); // 没有写完就继续
                     }
                 }
+                fclose($source); // 关闭远程文件
+                fclose($fp); // 关闭本地文件
             }
-            fclose($source); // 关闭远程文件
-            fclose($fp); // 关闭本地文件
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
         }
