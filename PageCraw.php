@@ -218,7 +218,7 @@ if ($crawParams == 'web') {
         if (!is_dir($saveDictPath)) {
             mkdir($saveDictPath, 0777, true);
         }
-        file_put_contents($saveDictPath . 'search' . '.html', $dictStr, FILE_APPEND);
+        file_put_contents($saveDictPath . 'search' . '.html', $dictStr);
         logWrite('save the search dict success');
     }
 }
