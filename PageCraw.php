@@ -27,9 +27,9 @@ $baseUrl = '';
 if ($crawParams == 'web') {
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=8';
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=16';
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=8'; // 新时代
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=16';
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
@@ -38,6 +38,7 @@ $crawPagePath = $crawRootPath . 'crawWeb/';
 $crawImgPath = $crawRootPath . 'crawImg/';
 $saveDictPath = $crawRootPath . 'dict/web/';
 $saveImgPath = $crawRootPath . 'dict/img/';
+$saveMoviePath = $crawRootPath . 'dict/movie/';
 $runTimePath = './runtime/';
 $tmplPath = './vendor/tmpl/';
 
@@ -202,6 +203,7 @@ if ($crawParams == 'web') {
                     $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
                     $sourceLink = $sourceLink[0];
                 }
+                $sourceList[] = ['sourceLink' => $sourceLink, 'sourceTile' => $sourceTitle];
                 $dictStr .= '<tr>';
                 $dictStr .= '<td class="td-id"><span class="num">' . ($key + 1) . '</span></td>';
                 $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
@@ -221,6 +223,22 @@ if ($crawParams == 'web') {
     }
 }
 
+if ($crawParams == 'down') {
+    $html = file_get_contents($saveDictPath. 'search.html');
+    preg_match_all('/\<a\s+.*?\>.*?\<\/a\>/is', $html, $a);
+    foreach ($a[0] as $key => $row) {
+        preg_match('/(?<=href=\").*?(?=\"\s+target)/', $row, $href);
+        preg_match('/\[.*?\d+\:\d+\]/is', $row, $title);
+        $title = mb_convert_encoding($title[0], 'gbk');
+        $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
+        $html = file_get_contents($href[0]);
+        preg_match('/video_url\:\s+\'.*?\.mp4/is', $html, $videoUrl);
+        if (empty($videoUrl)) continue;
+        $videoUrl = explode("'", $videoUrl[0]);
+        $videoUrl = $videoUrl[1];
+        $spider->setUrl($videoUrl)->download($saveMoviePath . $title . '.mp4');
+    }
+}
 
 
 
