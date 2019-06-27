@@ -10,10 +10,28 @@ ini_set('memory_limit','512M');
 error_reporting(E_ALL ^E_NOTICE);
 set_time_limit(0); // 不限制超时时间
 
+function logWrite($msg) {
+    $time = date('Y-m-d H:i:s');
+    echo $time . " $msg \n";
+}
+
+function p($data, $status = null)
+{
+    echo "<pre>";
+    if ($status == 'see') {
+        p(get_class_methods($data));
+    }
+    if ($data == null || $status) {
+        var_dump($data);
+    } else {
+        print_r($data);
+    }
+    exit("</pre>");
+}
+
 
 require './vendor/autoload.php';
 require './vendor/lib/Spider.php';
-include 'E:/www/global';
 
 use Symfony\Component\DomCrawler\Crawler;
 
