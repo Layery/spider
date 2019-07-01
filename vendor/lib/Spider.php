@@ -257,11 +257,9 @@ class Spider
                     $result = $this->setUrl($refreshUrl)->setHeader()->curl();
                 }
                 break;
-            case 302:
+            case 302 || 301:
                 $redirectUrl = $curlInfo['redirect_url'];
                 $result = $this->setUrl($redirectUrl)->setHeader()->curl();
-                break;
-            case 301:
                 break;
             case 404:
                 $result = 'has null page result, http code 404';

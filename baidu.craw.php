@@ -9,21 +9,6 @@ require './vendor/autoload.php';
 require './vendor/lib/Spider.php';
 include 'E:/www/global';
 
-
-
-
-
-$rs = file_get_contents('https://yaoshe57.com/embed/19584#iframeload');
-p($rs);
-preg_match('/video_url\:\s+\'.*?\.mp4/is', $rs, $m);
-p($m);
-
-
-
-
-
-
-
 use Symfony\Component\DomCrawler\Crawler;
 
 $crawRootPath = './crawFiles/yinduo/';
@@ -32,23 +17,24 @@ $url = 'https://yaoshe57.com/embed/22591#iframeload';
 set_time_limit(0); // script keep running;
 
 $spider = new Spider();
-$rs = $spider->setUrl($url)
-             ->setHeader([
-                 ':authority' => 'wannianrili.51240.com',
-                 ':method' => 'GET',
-                 ':path' => '/',
-                 ':scheme' => 'https',
-                 'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                 'accept-language' => 'zh-CN,zh;q=0.9',
-                 'cache-control' => 'no-cache',
-                 'cookie' => 'Hm_lvt_fbe0e02a7ffde424814bef2f6c9d36eb=1559730643; Hm_lpvt_fbe0e02a7ffde424814bef2f6c9d36eb=1559730841',
-                 'pragma' => 'no-cache',
-                 'upgrade-insecure-requests' => '1',
-                 'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'
-             ])
-             ->get();
 
-exit($rs);
+$html = $spider->setUrl($url)
+    ->setHeader([
+        ':authority' => 'wannianrili.51240.com',
+        ':method' => 'GET',
+        ':path' => '/',
+        ':scheme' => 'https',
+        'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+        'accept-language' => 'zh-CN,zh;q=0.9',
+        'cache-control' => 'no-cache',
+        'cookie' => 'Hm_lvt_fbe0e02a7ffde424814bef2f6c9d36eb=1559730643; Hm_lpvt_fbe0e02a7ffde424814bef2f6c9d36eb=1559730841',
+        'pragma' => 'no-cache',
+        'upgrade-insecure-requests' => '1',
+        'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'
+    ])
+    ->setFollowLocation()
+    ->get();
+
 
 
 

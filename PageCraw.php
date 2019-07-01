@@ -250,7 +250,7 @@ if ($crawParams == 'down') {
         $title = mb_convert_encoding($title[0], 'gbk');
         $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
         $html = file_get_contents($href[0]);
-        preg_match('/video_url\:\s+\'.*?\.mp4/is', $html, $videoUrl);
+        preg_match('/video\:+\'.*?\.mp4|video_url\:\s+\'.*?\.mp4/', $html, $videoUrl);
         if (empty($videoUrl)) continue;
         $videoUrl = explode("'", $videoUrl[0]);
         $videoUrl = $videoUrl[1];
