@@ -5,31 +5,7 @@
  * Date: 2018/12/25
  * Time: 16:13
  */
-ini_set('max_execution_time', 0); // 不限制执行时间
-ini_set('memory_limit','512M');
-error_reporting(E_ALL ^E_NOTICE);
-set_time_limit(0); // 不限制超时时间
-
-function logWrite($msg) {
-    $time = date('Y-m-d H:i:s');
-    echo $time . " $msg \n";
-}
-
-function p($data, $status = null)
-{
-    echo "<pre>";
-    if ($status == 'see') {
-        p(get_class_methods($data));
-    }
-    if ($data == null || $status) {
-        var_dump($data);
-    } else {
-        print_r($data);
-    }
-    exit("</pre>");
-}
-
-
+include "./config.php";
 require './vendor/autoload.php';
 require './vendor/lib/Spider.php';
 
@@ -45,20 +21,12 @@ $baseUrl = '';
 if ($crawParams == 'web') {
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
 } else if ($crawParams == 'img') {
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=8'; // 新时代
     $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=16';
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
 }
 //http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
 $hostInfo = pathinfo($baseUrl);
-$crawRootPath = './crawFiles/';
-$crawPagePath = $crawRootPath . 'crawWeb/';
-$crawImgPath = $crawRootPath . 'crawImg/';
-$saveDictPath = $crawRootPath . 'dict/web/';
-$saveImgPath = $crawRootPath . 'dict/img/';
-$saveMoviePath = $crawRootPath . 'dict/movie/';
-$runTimePath = './runtime/';
-$tmplPath = './vendor/tmpl/';
 
 $loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
 $loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
@@ -251,13 +219,16 @@ if ($crawParams == 'down') {
         $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
         $html = file_get_contents($href[0]);
         preg_match('/video\:+\'.*?\.mp4|video_url\:\s+\'.*?\.mp4/', $html, $videoUrl);
-        if (empty($videoUrl)) continue;
+        if (empty($videoUrl)) {
+            logWrite('could not found item continue it');
+            continue;
+        }
         $videoUrl = explode("'", $videoUrl[0]);
         $videoUrl = $videoUrl[1];
+        logWrite('begin download file '. $title);
         $spider->setUrl($videoUrl)->download($saveMoviePath . $title . '.mp4');
     }
 }
-
 
 
 
