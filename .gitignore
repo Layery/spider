@@ -1,0 +1,17 @@
+.idea/
+
+./crawFiles/dict/img/*
+
+./runtime/*
+
+
+
+img
+/crawFiles/dict/img.7z
+dict
+crawFiles
+runtime
+
+debug
+debug.html
+dbg
