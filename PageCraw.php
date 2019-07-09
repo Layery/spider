@@ -94,7 +94,11 @@ if ($crawParams == 'img') {
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
                     $continueStatus = false;
-                    $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . "/";
+                    if (IS_WIN) {
+                        $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . DS;
+                    } else {
+                        $imagePath = $saveImgPath . $imgTitle . DS;
+                    }
                     if (!is_dir($imagePath)) {
                         @mkdir($imagePath, 0777, true);
                     } else {
@@ -215,7 +219,11 @@ if ($crawParams == 'down') {
     foreach ($a[0] as $key => $row) {
         preg_match('/(?<=href=\").*?(?=\"\s+target)/', $row, $href);
         preg_match('/\[.*?\d+\:\d+\]/is', $row, $title);
-        $title = mb_convert_encoding($title[0], 'gbk');
+        if (IS_WIN) {
+            $title = mb_convert_encoding($title[0], 'gbk');
+        } else {
+            $title = $title[0];
+        }
         $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
         $html = file_get_contents($href[0]);
         preg_match('/video\:+\'.*?\.mp4|video_url\:\s+\'.*?\.mp4/', $html, $videoUrl);

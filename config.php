@@ -5,6 +5,7 @@ error_reporting(E_ALL ^E_NOTICE);
 set_time_limit(0); // 不限制超时时间
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', __DIR__. DS);
+define('IS_WIN', strpos(php_uname(), 'Windows') !== false);
 $crawRootPath = ROOT . 'crawFiles'. DS;
 $saveDictPath = $crawRootPath . 'dict'. DS . 'web' . DS;
 $saveImgPath = $crawRootPath . 'dict'. DS . 'img'. DS;
