@@ -146,7 +146,10 @@ if ($crawParams == 'web') {
                 }
                 preg_match('/\[.*?\d+\:\d+\]/is', $title, $m);
                 $title = $m[0];
-                if ($filter && !preg_match('/'. $filter . '/is', mb_convert_encoding($title, 'gbk'))) {
+                if (IS_WIN) {
+                    $title = mb_convert_encoding($title, 'gbk');
+                }
+                if ($filter && !preg_match('/'. $filter . '/is', $title)) {
                     continue;
                 }
                 $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
