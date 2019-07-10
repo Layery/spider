@@ -11,28 +11,22 @@ require './vendor/lib/Spider.php';
 
 use Symfony\Component\DomCrawler\Crawler;
 
+/*fwrite(STDOUT, iconv('utf-8', 'gbk', "请输入结束页: \n"));
+$end = trim(fgets(STDIN));
+fwrite(STDOUT, "Hello,$name"); //在终端回显输入*/
 
-//    fwrite(STDOUT, iconv('utf-8', 'gbk', "请输入结束页: \n"));
-//    $end = trim(fgets(STDIN));
-//    fwrite(STDOUT, "Hello,$name"); //在终端回显输入
+$runTime = time();
 $crawParams = isset($argv[1]) ? $argv[1] : 'web';
-$search = 'https://yandex.ru/search/?text=%E8%8D%89%E6%A6%B4%E7%A4%BE%E5%8C%BA';
-$baseUrl = '';
-if ($crawParams == 'web') {
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
-} else if ($crawParams == 'img') {
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=8'; // 新时代
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=16';
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=7'; // 技术讨论
-}
-//http://cl.wpio.xyz/htm_mob/22/1903/3469154.html
-$hostInfo = pathinfo($baseUrl);
-
+$baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
 $loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
 $loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
 $filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
-
-$runTime = time();
+if ($crawParams == 'img') {
+    $crawImgType = isset($argv[4]) && $argv[4] ? $argv[4] : 8;
+    $filter = isset($argv[5]) && $argv[5] ? str_replace(',', '|', trim($argv[5], ',')) : '';
+    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid='. $crawImgType;
+}
+$hostInfo = pathinfo($baseUrl);
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
 $spider->setHeader([
@@ -50,8 +44,6 @@ $spider->setHeader([
         'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
     ]);
 
-
-
 if ($crawParams == 'img') {
     $data = [];
     $urlInfo = parse_url($baseUrl);
@@ -64,6 +56,7 @@ if ($crawParams == 'img') {
         #$html = file_get_contents($runTimePath . 'fid='. $urlType. '.html');
         $crawler = new Crawler($html);
         $postTitle = $crawler->filterXPath('//title')->text();
+        logWrite('the post title '. $postTitle);
         try {
             logWrite('begin parse the ' . $i . ' page');
             $mainList = $crawler->filterXPath('//div[contains(@class,"list t_one")]');
