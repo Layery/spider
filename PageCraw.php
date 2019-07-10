@@ -93,11 +93,9 @@ if ($crawParams == 'img') {
                     $imgTitle = str_replace([',', '，','?', '？', '.', '（', '）', ' ', '　'], '', $row['title']);
                     $itemIndex = $key + 1;
                     #$itemIndex = 76; // debug
-                    $continueStatus = false;
+                    $imagePath = $saveImgPath . $imgTitle . DS;
                     if (IS_WIN) {
                         $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . DS;
-                    } else {
-                        $imagePath = $saveImgPath . $imgTitle . DS;
                     }
                     if (!is_dir($imagePath)) {
                         @mkdir($imagePath, 0777, true);
@@ -117,10 +115,9 @@ if ($crawParams == 'img') {
                     foreach ($imgListDom as $imageNode) {
                         $imageList[] = $imageNode->getAttribute('data-src');
                     }
-
-                    if ($continueStatus) continue;
                     $countImage = count($imageList);
                     foreach ($imageList as $imgIndex => $image) {
+                        if (!is_dir($imagePath)) break;
                         $imgIndex = $imgIndex + 1;
                         if ($imgIndex > 30 && $countImage > 50) {
                             logWrite('too many item to download break it');
