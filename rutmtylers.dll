@@ -31,12 +31,14 @@ while (1) {
         $result[] = $row;
         $i ++;
     }
+	
     $msg = $text = '';
     $month = 1;
     foreach ($result as $row) {
-        #$title = preg_match('/\d+/s', $row['title'], $t);
-        #$title = (int)$t[0];
-        if (strpos($row['title'], "活力花") !== false && $row['over_rich'] > 0) {
+        $datetime = preg_match('/\d+/s', $row['title'], $t);
+        $datetime = (int)$t[0];
+		//if ($datetime == $month && $row['over_rich'] > 0) {
+        if (strpos($row['title'], "车") !== false && $datetime == 1 && $row['over_rich'] > 0) {
             $text .= $row['title'] . '上新_剩余'. $row['over_rich']. '|';
             $msg .= '【'. $row['title'] . '】利率【'. $row['rate']. ' 剩余可投【'. $row['over_rich'].'】'. "\n\n";
         }

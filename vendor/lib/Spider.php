@@ -186,7 +186,8 @@ class Spider
      *
      * @param string $fileName
      * @param string $timeout
-     * @return mixed
+     * @throws Exception
+     * @return bool|Exception;
      */
     public function download($fileName = '', $timeOut = 0)
     {

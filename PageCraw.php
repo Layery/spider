@@ -129,7 +129,6 @@ if ($crawParams == 'img') {
     }
 }
 
-
 if ($crawParams == 'web') {
     $data = [];
     $searchList = [];
