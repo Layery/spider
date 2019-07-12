@@ -116,7 +116,8 @@ if ($crawParams == 'img') {
                             logWrite('too many item to download break it');
                             break;
                         }
-                        $ext = substr($image, -4);
+                        $pathInfo = pathinfo($image);
+                        $ext = ".". $pathInfo['extension'];
                         $downloadFile = $imagePath . $imgIndex . $ext;
                         $spider->setUrl($image)->download($downloadFile);
                         logWrite('save ' . $imgIndex . 'th' . ' success');
@@ -195,6 +196,7 @@ if ($crawParams == 'web') {
             logWrite('catch Exception on '. ($key + 1));
             logWrite('Exception info : '. $e->getTraceAsString());
         }
+
         $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
 //        $dictStr = mb_convert_encoding($dictStr, 'UTF-8');
         if (!is_dir($saveDictPath)) {
