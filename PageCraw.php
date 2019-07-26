@@ -162,6 +162,7 @@ if ($crawParams == 'web') {
                 ];
             }
         }
+        logWrite('craw the '. $i . ' page count '. count($data). ' item');
     }
     logWrite('found total items '. count($data));
     if (!empty($data)) {
