@@ -14,7 +14,8 @@ $runTimePath = ROOT . 'runtime'. DS;
 $tmplPath = ROOT . 'vendor'. DS . 'tmpl'. DS;
 function logWrite($msg) {
     $time = date('Y-m-d H:i:s');
-    echo $time . " $msg \n";
+    $msg = $time. " $msg \n";
+    echo IS_WIN ? mb_convert_encoding($msg, 'gbk') : $msg;
 }
 
 function p($data, $status = null)

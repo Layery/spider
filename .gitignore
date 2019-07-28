@@ -1,5 +1,7 @@
 .idea/
 
+php_errors.log
+
 ./crawFiles/dict/img/*
 
 ./runtime/*
