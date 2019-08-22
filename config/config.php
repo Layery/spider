@@ -1,10 +1,12 @@
 <?php
 ini_set('max_execution_time', 0); // 不限制执行时间
 ini_set('memory_limit','512M');
-error_reporting(E_ALL ^E_NOTICE);
+//error_reporting(E_ALL ^E_NOTICE);
+error_reporting(0);
 set_time_limit(0); // 不限制超时时间
 define('DS', DIRECTORY_SEPARATOR);
-define('ROOT', __DIR__. DS);
+define('ROOT', __DIR__. DS. '..'. DS);
+
 define('IS_WIN', strpos(php_uname(), 'Windows') !== false);
 $crawRootPath = ROOT . 'crawFiles'. DS;
 $saveDictPath = $crawRootPath . 'dict'. DS . 'web' . DS;
