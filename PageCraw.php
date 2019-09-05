@@ -42,38 +42,55 @@ $spider->setHeader([
         'referer' => 'https://hs.etet.men/index.php',
         'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
         'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
-    ]);
+]);
 
 
 if ($crawParams == 'fed') {
-    $baseUrl = 'http://www.ffvan.com/video/index/cid/10';
+    $baseUrl = 'https://www.ffvan.com/video/index/cid/10';
     $host = parse_url($baseUrl);
-    $host = $host['host'];
+    $host = $host['scheme'] . '://'. $host['host'];
     $data = [];
     for ($i = $loopStart; $i <= $loopEnd; $i++) {
         $url = $baseUrl . '/p/' . $i;
+//        $html = file_get_contents($runTimePath. 'debug.html');
         $html = file_get_contents($url);
         $crawler = new Crawler($html);
-        $mainList = $crawler->filterXPath('//div[@class="detail_right_div"]/ul/li/p');
-        foreach ($mainList as $key => $node) {
-            #if (empty($node->childNodes->item(1))) continue;
-            #if (empty($node->childNodes->item(2))) continue;
-
-            $title = $node->childNodes->item(1)->getAttribute('alt');
+        $mainDom = $crawler->filterXPath('//div[@class="detail_right_div"]/ul');
+        $itemList = $mainDom->filterXPath('//li');
+        foreach ($itemList as $key => $node) {
+            $item = $node->getElementsByTagName('img')->item(0);
+            $title = $item->getAttribute('title');
             if (IS_WIN) {
                 $title = mb_convert_encoding($title, 'gbk');
             }
-            $href = $node->childNodes->item(2)->getAttribute('href');
+            $href = $node->getElementsByTagName('a')->item(0)->getAttribute('href');
             $href = $host . $href;
             $data[] = [
                 'href' => $href,
                 'title' => $title
             ];
-            print_r($data);
         }
         logWrite('craw the '. $i . ' page count '. count($data). ' item');
     }
-    p($data);
+    if (!empty($data)) {
+        foreach ($data as $key => $row) {
+            $html = $spider->setHeader([
+                ':authority' => 'www.ffvan.com',
+                ':method' => 'GET',
+                ':path' => '/video/show/id/68989',
+                ':scheme' => 'https',
+                'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+                'accept-encoding' => 'gzip, deflate, br',
+                'accept-language' => 'zh-CN,zh;q=0.9',
+                'cookie' => 'PCA=exist; __cfduid=def757ad12302bc3957a6e4672d49cc5f1566463005; jiucao_avs=lmn1hf7iqmkq7s8o4f331365d0; Hm_lvt_5cee5837c78f44327e558552dd935dbe=1566463011,1567667068; Hm_lpvt_5cee5837c78f44327e558552dd935dbe=1567667106',
+                'dnt' => '1',
+                'if-modified-since' => 'Thu, 05 Sep 2019 07:05:01 GMT',
+                'upgrade-insecure-requests' => '1',
+                'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36',
+            ])->setUrl($row['href'])->post();
+            exit($html);
+        }
+    }
     logWrite('found total items '. count($data));
 
 
@@ -234,7 +251,7 @@ if ($crawParams == 'web') {
         }
 
         $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
-//        $dictStr = mb_convert_encoding($dictStr, 'UTF-8');
+        $dictStr = mb_convert_encoding($dictStr, 'UTF-8');
         if (!is_dir($saveDictPath)) {
             mkdir($saveDictPath, 0777, true);
         }
