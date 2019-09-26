@@ -73,6 +73,7 @@ if ($crawParams == 'fed') {
         logWrite('craw the '. $i . ' page count '. count($data). ' item');
     }
     if (!empty($data)) {
+        echo print_r($data, 1);
         foreach ($data as $key => $row) {
             $html = $spider->setHeader([
                 ':authority' => 'www.ffvan.com',
@@ -251,7 +252,6 @@ if ($crawParams == 'web') {
         }
 
         $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
-        $dictStr = mb_convert_encoding($dictStr, 'UTF-8');
         if (!is_dir($saveDictPath)) {
             mkdir($saveDictPath, 0777, true);
         }
