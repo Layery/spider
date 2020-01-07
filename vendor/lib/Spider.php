@@ -73,7 +73,7 @@ class Spider
             foreach ($params as $k => $v) {
                 $header[$k] = $v;
             }
-            $this->header = array_merge($this->header, $header);
+            $this->header = $header;
         }
         foreach ($this->header as $key => $val) {
             $opt[] = $key . ":" . $val;
@@ -209,6 +209,8 @@ class Spider
                 }
                 fclose($source); // 关闭远程文件
                 fclose($fp); // 关闭本地文件
+            } else {
+                exit('can not open origin source!');
             }
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
