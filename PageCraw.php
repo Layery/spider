@@ -18,9 +18,15 @@ fwrite(STDOUT, "Hello,$name"); //在终端回显输入*/
 $runTime = time();
 $crawParams = isset($argv[1]) ? $argv[1] : 'web';
 $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
-$loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
-$loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
-$filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
+if (is_numeric($argv[2]) || is_numeric($argv[3])) {
+    $loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
+    $loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
+}
+$filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
+if ($loopStart || $loopEnd) {
+    $filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
+}
+
 if ($crawParams == 'img') {
     $crawImgType = isset($argv[4]) && $argv[4] ? $argv[4] : 8;
     $filter = isset($argv[5]) && $argv[5] ? str_replace(',', '|', trim($argv[5], ',')) : '';
@@ -47,17 +53,11 @@ $spider = new Spider();
 
 if ($crawParams == 'yase') {
 
+    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=阿姨';
-//    $result = $spider->setUrl($baseUrl)
-//                     ->setHeader([':authority' => 'j.yaseh4.com',
-//                         'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-//                         'accept-language' => 'zh-CN,zh;q=0.9',
-//                         'cache-control' => 'no-cache',
-//                         'pragma' => 'no-cache',
-//                         'upgrade-insecure-requests' => '1',
-//                         'user-agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36'])
-//                     ->post($baseUrl);
-    $result = file_get_contents($baseUrl);
+//    $result = file_get_contents($baseUrl);
+//    file_put_contents($runTimePath. 'result.html', $result);
+    $result = file_get_contents($runTimePath. 'result.html');
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
     $crawler = new Crawler($result);
@@ -68,14 +68,32 @@ if ($crawParams == 'yase') {
         $title = $node->filterXPath('//div[@class="video-item-title"]/a')->text();
         return ['href' => $href, 'title' => $title];
     });
-    foreach ($data as $row) {
-        $html = $spider->setUrl($row['href'])->post();
-        preg_match('/id\s+\:\s+\d+/', $html, $itemID);
-        $itemID = explode(':', $itemID[0]);
-        $itemID = (int) $itemID[1];
+    foreach ($data as $index => $row) {
+        $nowTitle = mb_convert_encoding($row['title'], 'gbk');
+        $itemID = (int) basename($row['href']);
         $api = $host . '/api/video/player_domain?id='. $itemID;
-        $resource = json_decode(file_get_contents($api), 1);
-        $spider->setUrl($resource['data'])->download($saveMoviePath. $row['title']. '.m3u8');
+        $apiResult = json_decode(file_get_contents($api), 1);
+        $apiResultUrl = $apiResult['data'];
+        $apiPathInfo = pathinfo($apiResultUrl);
+        $apiResult = parse_url($apiResultUrl);
+        $apischeme = $apiResult['scheme'];
+        $apischeme = 'http';
+        $apiHost = $apischeme . "://". $apiResult['host'];
+        $master = file_get_contents($apiResultUrl);
+        $playlist = explode("\n", $master);
+        // 拼接ts文件
+        if (empty($playlist[2])) continue;
+        $tsUrl = $apiPathInfo['dirname'] .'/'. $playlist[2];
+        $tsResult = file_get_contents($tsUrl);
+        preg_match_all('/\/\d+.*?\n/', $tsResult, $m);
+        if (empty($m[0])) continue;
+        foreach ($m[0] as $key => $val) {
+            $url = rtrim($apiHost . $val, "\n");
+            $temp = file_get_contents($url);
+            file_put_contents($saveMoviePath . $key . '.ts', $temp);
+        }
+        exec('copy /b '. $saveMoviePath. '*.ts '. $saveMoviePath. $nowTitle. '.mp4');
+        exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
     }
 }
 
