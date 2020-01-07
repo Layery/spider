@@ -252,12 +252,18 @@ if ($crawParams == 'img') {
                     if ($urlType == 7) {
                         $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]/img');
                     } else {
-                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]//input');
+                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]//img');
                     }
                     foreach ($imgListDom as $imageNode) {
                         $imageList[] = $imageNode->getAttribute('data-src');
                     }
                     $countImage = count($imageList);
+                    if ($countImage <= 0) {
+                        logWrite('not found image on this page item: '. $itemIndex);
+                        continue;
+                    } else {
+                        logWrite('found '. $countImage . ' images success!');
+                    }
                     foreach ($imageList as $imgIndex => $image) {
                         if (!is_dir($imagePath)) break;
                         $imgIndex = $imgIndex + 1;
