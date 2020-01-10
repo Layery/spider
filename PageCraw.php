@@ -52,11 +52,10 @@ $spider = new Spider();
 
 
 if ($crawParams == 'yase') {
-
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=阿姨';
-//    $result = file_get_contents($baseUrl);
-//    file_put_contents($runTimePath. 'result.html', $result);
+     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=瓜子脸美女深喉';
+    $result = file_get_contents($baseUrl);
+    file_put_contents($runTimePath. 'result.html', $result);
     $result = file_get_contents($runTimePath. 'result.html');
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
@@ -87,12 +86,17 @@ if ($crawParams == 'yase') {
         $tsResult = file_get_contents($tsUrl);
         preg_match_all('/\/\d+.*?\n/', $tsResult, $m);
         if (empty($m[0])) continue;
+        $tsArr = range(0, count($m[0])-1);
+        $cmd = "copy /b ";
         foreach ($m[0] as $key => $val) {
             $url = rtrim($apiHost . $val, "\n");
             $temp = file_get_contents($url);
             file_put_contents($saveMoviePath . $key . '.ts', $temp);
+            $cmd .= $saveMoviePath. $key. ".ts+";
         }
-        exec('copy /b '. $saveMoviePath. '*.ts '. $saveMoviePath. $nowTitle. '.mp4');
+        $cmd = rtrim($cmd, '+');
+        $cmd .= " ". $saveMoviePath. $nowTitle. '.mp4';
+        exec($cmd);
         exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
     }
 }
