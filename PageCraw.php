@@ -54,10 +54,10 @@ $spider = new Spider();
 if ($crawParams == 'yase') {
 
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=阿姨';
-//    $result = file_get_contents($baseUrl);
-//    file_put_contents($runTimePath. 'result.html', $result);
-    $result = file_get_contents($runTimePath. 'result.html');
+    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=口交';
+    $result = file_get_contents($baseUrl);   
+   file_put_contents($runTimePath. 'result.html', $result);
+    // $result = file_get_contents($runTimePath. 'result.html');
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
     $crawler = new Crawler($result);
@@ -73,6 +73,10 @@ if ($crawParams == 'yase') {
         $itemID = (int) basename($row['href']);
         $api = $host . '/api/video/player_domain?id='. $itemID;
         $apiResult = json_decode(file_get_contents($api), 1);
+        if ($apiResult['code'] == -1) {
+            logWrite($apiResult['msg']);
+            continue;
+        }
         $apiResultUrl = $apiResult['data'];
         $apiPathInfo = pathinfo($apiResultUrl);
         $apiResult = parse_url($apiResultUrl);
@@ -82,7 +86,13 @@ if ($crawParams == 'yase') {
         $master = file_get_contents($apiResultUrl);
         $playlist = explode("\n", $master);
         // 拼接ts文件
-        if (empty($playlist[2])) continue;
+        if (empty($playlist[2])) {
+            logWrite('can not find ts config');
+            continue;
+        }
+
+        logWrite($row['title']. " begin catching");
+
         $tsUrl = $apiPathInfo['dirname'] .'/'. $playlist[2];
         $tsResult = file_get_contents($tsUrl);
         preg_match_all('/\/\d+.*?\n/', $tsResult, $m);
