@@ -29,10 +29,15 @@ function getOpenID($len = 10)
 }
 
 
-p(getOpenID(5));
 
-$html = $spider->setUrl($url)->get();
+$url = 'https://kyfw.12306.cn/otn/leftTicket/queryZ?leftTicketDTO.train_date=2020-01-21&leftTicketDTO.from_station=BJP&leftTicketDTO.to_station=SJP&purpose_codes=ADULT';
 
+
+$spider->setUrl($url)
+	->setHeader()
+	->post([
+		
+	]);
 
 
 
