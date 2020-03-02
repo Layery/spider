@@ -29,9 +29,29 @@ function getOpenID($len = 10)
 }
 
 
-p(getOpenID(5));
 
-$html = $spider->setUrl($url)->get();
+#$html = $spider->setUrl($url)->get();
+
+foreach ([1, 2, 3, 4, 5] as $val ) 
+{
+    switch ($val) {
+        case 1:
+            echo '1111'. "\n";
+            break;
+        
+
+        case 3:
+            echo 'sdf';
+            continue;
+            echo 'ccc';
+
+            break;
+        default:
+            # code...
+            break;
+    }
+    echo $val. '----'. "\n";
+} 
 
 
 

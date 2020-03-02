@@ -52,12 +52,13 @@ $spider = new Spider();
 
 
 if ($crawParams == 'yase') {
-
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=口交';
-    $result = file_get_contents($baseUrl);   
-   file_put_contents($runTimePath. 'result.html', $result);
-    // $result = file_get_contents($runTimePath. 'result.html');
+    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=超美顶级高颜值TS自慰口交做';
+    // $result = file_get_contents($baseUrl);   
+    //////////////////////////////////////////////////////////////
+    // file_put_contents($runTimePath. 'result.html', $result); //
+    //////////////////////////////////////////////////////////////
+    $result = file_get_contents($runTimePath. 'result.html');
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
     $crawler = new Crawler($result);
@@ -84,6 +85,8 @@ if ($crawParams == 'yase') {
         $apischeme = 'http';
         $apiHost = $apischeme . "://". $apiResult['host'];
         $master = file_get_contents($apiResultUrl);
+        $master = file_get_contents($runTimePath . 'hls.m3u8');
+
         $playlist = explode("\n", $master);
         // 拼接ts文件
         if (empty($playlist[2])) {
@@ -97,12 +100,17 @@ if ($crawParams == 'yase') {
         $tsResult = file_get_contents($tsUrl);
         preg_match_all('/\/\d+.*?\n/', $tsResult, $m);
         if (empty($m[0])) continue;
+        $tsArr = range(0, count($m[0])-1);
+        $cmd = "copy /b ";
         foreach ($m[0] as $key => $val) {
             $url = rtrim($apiHost . $val, "\n");
             $temp = file_get_contents($url);
             file_put_contents($saveMoviePath . $key . '.ts', $temp);
+            $cmd .= $saveMoviePath. $key. ".ts+";
         }
-        exec('copy /b '. $saveMoviePath. '*.ts '. $saveMoviePath. $nowTitle. '.mp4');
+        $cmd = rtrim($cmd, '+');
+        $cmd .= " ". $saveMoviePath. $nowTitle. '.mp4';
+        exec($cmd);
         exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
     }
 }
