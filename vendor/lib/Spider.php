@@ -115,9 +115,7 @@ class Spider
     public function setCookie($file = '')
     {
         if ($file) {
-            $this->cookie = 'XSRF-TOKEN=eyJpdiI6InJMRDBUQ1N1MEQ4cDZ3bytYaWtibmc9PSIsInZhbHVlIjoid25vYWRpUWJwZkw3Yks2VHFTZVBJYmVzWGNIbEF0SFlyMW41UlBDVWZLeFZqNjFWeW85Rkk2RnNaZ0F4Ym5kNSIsIm1hYyI6IjhmZjZkM2IzNGViZTRiODA0NmVkNDI5ZTYxY2YwZDRlYmFhYzUwMjdlNjZkMmYxM2MzMTUwZjAyMzNmYjUzN2EifQ%3D%3D';
-            $this->cookie = 'XSRF-TOKEN=eyJpdiI6IlFVaXE0bkpoQW1pS2hQSnM1ekF1U3c9PSIsInZhbHVlIjoiSFJ5bGhrdHpxaURtTTBQN3k4bHVId3hPUjN5cU1MeWM2VkUxRFUwUlJWNGM3RkhkdkZVRUNmc050VVBRYk1MXC8iLCJtYWMiOiJlMzcyZThmNDNjZDZiMTEzZmM2NzJjMDdhNjUxMGQ1Zjc1MGVjMDFmYWZiN2U3NGY5N2MxNzAzZmVhZjJlY2ZiIn0%3D; laravel_session=eyJpdiI6ImNuaGF3VSt2eVBUNVBIN3lmMXFjaVE9PSIsInZhbHVlIjoiXC95M1VqbDdaZUNvSVNVcjdaQTBPM2tcL1B1bEJSVHVmdElsN3R0cmNycG1EcEFoT2NNMGtBQndOVUVSemVFZ2plIiwibWFjIjoiYTA3ZTI5MzcwZDA5ZTM4MGU1NWM0ZTFmNmI1MjUzNjBjNDE5ZmVkNzVhOTIxMzk4YmQ2MzYxZDZhYmE2OTE1NiJ9';
-            $this->cookie = 'IESESSION=alive; pgv_pvi=3402590208; pgv_si=s127086592; tencentSig=1516524544; _qddamta_4006660033=2-0; _qddaz=QD.slkhqk.dcwcan.jvghkdc9; XSRF-TOKEN=eyJpdiI6InlBTUZNM094SW5sekJCc0JwQ3BCT2c9PSIsInZhbHVlIjoiUVdBWTR4bk1jQ3RhZUpkcW40cGdpXC83NWRHWWU1Sk1WaVZzN0JtWmVBbzBzVFZSc2d4QmVZWEJ3a1BkYlk4eloiLCJtYWMiOiI1MWI4MDM5MzA5MGRlNWUwYWU3ZWQyNDg2MDEzNmM5NGYxOTU4ZjE0ODA5ODljMTU2N2IyZTJjYTQ1NDBjZTVhIn0%3D; laravel_session=eyJpdiI6IkF5azhCT1UzTUxzalRFMTNcL1wvY04xUT09IiwidmFsdWUiOiJkSWFvb2tYOFJBZllrdDZQOTA4VHJGY2tvVUpQWFwvSkFuUUlLTnZcL0tiTlJkbEk0eEpINHQ2cWFxbkE4MTdyR3ciLCJtYWMiOiJkYWEzNGUwODBmNzg2OWM1OThhOGIyYTk4YTlkNDk5MTA0MDY3YTc3NmM5ZDczOWMyNTM4NjdlNmVmNGMyZTY5In0%3D; _qdda=2-1.1; _qddab=2-el5k5n.jvghkdcb';
+            $this->cookie = $file;
             curl_setopt($this->_ch, CURLOPT_COOKIE, $this->cookie);
         }
         return $this;
@@ -148,10 +146,11 @@ class Spider
         return call_user_func([$this, 'curl'], $data, $timeOut);
     }
 
-    public function post($data = [], $timeOut = 30)
+    public function post($data = [], $timeOut = 30, $isDebug = false)
     {
         curl_setopt($this->_ch, CURLOPT_POST, 1);
-        return call_user_func([$this, 'curl'], $data, $timeOut);
+//        curl_setopt($this->_ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        return call_user_func([$this, 'curl'], $data, $timeOut, $isDebug);
     }
 
     public function download_bak($fileName = '', $timeOut = 0)
@@ -218,21 +217,43 @@ class Spider
         return true;
     }
 
-    protected function getCookie($url = '', $post = [])
+    /**
+     * @return array
+     */
+    public function getError()
     {
-        $ch = curl_init();
+        return [
+            'curl_getinfo' => curl_getinfo($this->_ch),
+            'curl_error' => curl_error($this->_ch),
+            'curl_errno' => curl_errno($this->_ch)
+        ];
+    }
+    /**
+     * @param string $url
+     * @param array $post
+     * @return $this
+     */
+    public function getCookie($post = [])
+    {
+        $url = $this->url;
+        $ch = $this->_ch;
         if (strpos($url, 'https') !== false) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书验证
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0); // 跳过证书验证
         }
         curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->header);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
-        curl_exec($ch);
+        if (!empty($post)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        }
+        $rs = curl_exec($ch);
+        p($rs);
         curl_close($ch);
+        return $this;
     }
 
     /**
@@ -285,7 +306,7 @@ class Spider
         return $this;
     }
 
-    protected function curl($data = [], $timeOut = 30)
+    protected function curl($data = [], $timeOut = 30, $isDebug = false)
     {
         $result = NULL;
         if ($this->url) {
@@ -293,8 +314,19 @@ class Spider
                 curl_setopt($this->_ch, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书验证
                 curl_setopt($this->_ch, CURLOPT_SSL_VERIFYHOST, 0); // 跳过证书验证
             }
-            curl_setopt($this->_ch, CURLOPT_HEADER, false); // 设置头文件的信息作为数据流输出
+            curl_setopt($this->_ch, CURLOPT_HEADER, true); // 设置头文件的信息作为数据流输出
             curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true); // 返回文件流形式而不直接输出
+            /**
+             * 当curl发送post请求时, 如果请求的数据大于1kb 会默认加上Expect:100-continue,
+             * 此时会分两步请求:
+             *      1: 询问server是否可以请求, 如果server告诉浏览器可以请求, 才开始请求第二步,
+             *      2: 发送真实的post数据
+             *
+             * 但是并不是所有的server都会有100-continue, 这样就会导致请求失败, 出现400, 417等
+             * 错误状态码,
+             * 解决办法:
+             *     header头中加上 expect: ''
+             */
             #curl_setopt($this->_ch, CURLOPT_HTTPHEADER, array('Expect:'));
             #curl_setopt($this->_ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC); //代理认证模式
             #curl_setopt($this->_ch, CURLOPT_PROXY, '117.90.3.36:9000'); // fiddler debug
@@ -305,6 +337,9 @@ class Spider
             if ($data) {
                 $dataStr = http_build_query($data);
                 curl_setopt($this->_ch, CURLOPT_POSTFIELDS, $dataStr);
+            }
+            if ($isDebug) {
+                return $this->getError();
             }
             if ($this->followLocation) {
                 $result = $this->getCurlResult();

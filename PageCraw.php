@@ -50,15 +50,30 @@ $spider = new Spider();
 //        'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
 //]);
 
+//$crawParams = 'debug';
+if ($crawParams == 'debug') {
+
+    // ffmpeg -f concat -i inputs.txt out.flv
+    $cmd = '';
+    $cmd .= 'D:/XiaoWanToolBox/tools/ffmpeg.exe -f concat -safe 0 -i E:/www/spider/crawFiles/dict/movie/out.txt -c copy E:/www/spider/crawFiles/dict/movie/out.mp4';
+    exec($cmd);
+    die;
+
+
+    $arr = range(0, 403);
+    foreach ($arr as $v) {
+        $data = "file E:/www/spider/crawFiles/dict/movie/" . $v. ".ts". "\n";
+        file_put_contents($saveMoviePath. 'out.txt', $data, FILE_APPEND);
+    }
+}
+
+
 
 if ($crawParams == 'yase') {
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword=超美顶级高颜值TS自慰口交做';
-    // $result = file_get_contents($baseUrl);   
-    //////////////////////////////////////////////////////////////
-    // file_put_contents($runTimePath. 'result.html', $result); //
-    //////////////////////////////////////////////////////////////
-    $result = file_get_contents($runTimePath. 'result.html');
+    $baseUrl = 'https://j.yasejj2.com/video/view/984405';
+    $result = file_get_contents($baseUrl);
+    file_put_contents($runTimePath. 'result.html', $result);
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
     $crawler = new Crawler($result);
@@ -85,8 +100,6 @@ if ($crawParams == 'yase') {
         $apischeme = 'http';
         $apiHost = $apischeme . "://". $apiResult['host'];
         $master = file_get_contents($apiResultUrl);
-        $master = file_get_contents($runTimePath . 'hls.m3u8');
-
         $playlist = explode("\n", $master);
         // 拼接ts文件
         if (empty($playlist[2])) {
@@ -111,7 +124,7 @@ if ($crawParams == 'yase') {
         $cmd = rtrim($cmd, '+');
         $cmd .= " ". $saveMoviePath. $nowTitle. '.mp4';
         exec($cmd);
-        exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
+        // exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
     }
 }
 

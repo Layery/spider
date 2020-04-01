@@ -41,9 +41,9 @@ class ImageTest extends TestCase
 
     public function getGetUriTests()
     {
-        return [
-            ['/foo.png', 'http://localhost/bar/foo/', 'http://localhost/foo.png'],
-            ['foo.png', 'http://localhost/bar/foo/', 'http://localhost/bar/foo/foo.png'],
-        ];
+        return array(
+            array('/foo.png', 'http://localhost/bar/foo/', 'http://localhost/foo.png'),
+            array('foo.png', 'http://localhost/bar/foo/', 'http://localhost/bar/foo/foo.png'),
+        );
     }
 }
