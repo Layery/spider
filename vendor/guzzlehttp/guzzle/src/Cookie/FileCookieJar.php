@@ -72,16 +72,14 @@ class FileCookieJar extends CookieJar
      */
     public function load($filename)
     {
-
         $json = file_get_contents($filename);
         if (false === $json) {
             throw new \RuntimeException("Unable to load file {$filename}");
         } elseif ($json === '') {
             return;
         }
-        p(\json_decode($json, true));
+
         $data = \GuzzleHttp\json_decode($json, true);
-        p($data);
         if (is_array($data)) {
             foreach (json_decode($json, true) as $cookie) {
                 $this->setCookie(new SetCookie($cookie));

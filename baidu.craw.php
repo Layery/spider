@@ -120,7 +120,6 @@ class PostServer
         p(json_decode($rs, true));
     }
 
-
     public function getServerCookie()
     {
         if (file_exists(COOKIE_PATH. 'server.tmp')) {
@@ -186,17 +185,74 @@ class PostServer
 }
 
 
-$poster = new PostServer();
-$rs = $poster->getBaiDuCookie();
-p($rs);
+// 测试企查查接口
+
+$url = 'http://api.qichacha.com/ECIV4/GetDetailsByName?key=9be73ef2ab9648789fb4a7de0a3a8d6f&keyword=悦美';
+$time = time();
+$apiKey = '9be73ef2ab9648789fb4a7de0a3a8d6f';
+$apiSecretKey = '66FD3D0C7E1C59D781FCF9E83C02EEEF';
+$token = strtoupper(md5($apiKey. $time . $apiSecretKey));
+$client = PostServer::getGuzzleClient();
+$rs = $client->get($url, [
+    'headers' => [
+        'Token' => $token,
+        'Timespan' => $time
+    ]
+]);
+p($rs->getBody()->getContents());
 
 
-// login
-//$rs = $client->request('post', $loginApi, ['form_params' => $loginParams]);
-//$headers = $rs->getHeaders();
-//p($headers);
-// get cookie
-$cookie = 'session_id=1585303633731494140; path=/; domain=abeiyun.com';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 $jar = CookieJar::fromArray([
     'session_id' => '1585313118121533203',
@@ -206,55 +262,6 @@ $jar = CookieJar::fromArray([
 ], 'abeiyun.com');
 
 $client = new \GuzzleHttp\Client(['cookies' => $jar]);
-
-
-$contents = $contents->getBody()->getContents();
-
-
-
-
-
-$rs = $spider
-    ->setUrl($checkEndTimeApi)
-
-    ->setHeader([
-        ':authority' => 'api.abeiyun.com',
-        ':method' => 'POST',
-        'accept' => '*/*',
-        'content-length' => '26',
-        'content-type' => 'application/x-www-form-urlencoded',
-        'origin' => 'https://www.abeiyun.com',
-        'referer' => 'https://www.abeiyun.com/control/',
-        'sec-fetch-dest' => 'empty',
-        'sec-fetch-mode' => 'cors',
-        'sec-fetch-site' => 'same-site',
-        'Expect' => '',
-        'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36 Edg/80.0.361.69',
-    ])
-    ->setCookie($cookie)
-//    ->getCookie();
-
-
-        ->post(['cmd' => 'vps_list', 'vps' => 'free']);
-p($rs);
-
-$rs = $spider
-    ->setHeader([
-        'Content-Type' => 'application/x-www-form-urlencoded',
-        'Origin' => 'https://www.abeiyun.com',
-        'Referer' => 'https://www.abeiyun.com/control/',
-        'cookie' => $cookie
-    ])
-    ->setUrl($freeListApi)
-    ->post([
-        'cmd' => 'free_delay_list',
-        'ptype' => 'vps',
-        'count' => '20',
-        'page' => '1',
-    ], 30, 1);
-
-
-p($spider);
 
 
 
