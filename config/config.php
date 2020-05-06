@@ -24,6 +24,16 @@ function logWrite($msg) {
     echo IS_WIN ? mb_convert_encoding($msg, 'gbk') : $msg;
 }
 
+function logFile($path, $data)
+{
+    $pathInfo = dirname($path);
+    if (!is_dir($pathInfo)) {
+        mkdir($pathInfo, 0777, true);
+    }
+    return file_put_contents($path, $data);
+}
+
+
 function p($data, $status = null)
 {
     echo "<pre>";

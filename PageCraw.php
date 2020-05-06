@@ -8,12 +8,165 @@
 include "./config/config.php";
 require './vendor/autoload.php';
 require './vendor/lib/Spider.php';
-
+use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\FileCookieJar;
 use Symfony\Component\DomCrawler\Crawler;
 
 /*fwrite(STDOUT, iconv('utf-8', 'gbk', "请输入结束页: \n"));
 $end = trim(fgets(STDIN));
 fwrite(STDOUT, "Hello,$name"); //在终端回显输入*/
+
+
+class Sucker
+{
+    protected $client;
+
+    private $driver;
+
+    private $loopStart;
+
+    private $loopEnd;
+
+    private $filter;
+
+    public function __construct()
+    {
+        global $argv;
+        $doAction = 'doError';
+        if (!empty($argv[1])) {
+            $this->driver = isset($argv[1]) ? $argv[1] : 'doError';
+            $doAction = 'do'. ucfirst($this->driver);
+            if (!method_exists($this, $doAction)) {
+                exit('can not find this driver');
+            }
+            if (is_numeric($argv[2]) && is_numeric($argv[3])) {
+                $this->loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
+                $this->loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
+            }
+            if ($this->loopStart || $this->loopEnd) {
+                $this->filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
+            }
+
+            if ($this->suckType == 'img') {
+                $crawImgType = isset($argv[4]) && $argv[4] ? $argv[4] : 8;
+                $filter = isset($argv[5]) && $argv[5] ? str_replace(',', '|', trim($argv[5], ',')) : '';
+                $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid='. $crawImgType;
+            }
+            $this->client = new Client();
+        }
+        return call_user_func([$this, $doAction]);
+    }
+
+    public function doError()
+    {
+        exit('error');
+    }
+
+    public static function init()
+    {
+        return new static();
+    }
+
+    public function doWeb()
+    {
+        $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
+        $hostInfo = pathinfo($baseUrl);
+        $tplFile = file_get_contents(TMPL_PATH . 'view.tpl');
+        $data = [];
+        for ($i = $this->loopStart; $i <= $this->loopEnd; $i++) {
+            $url = $baseUrl . '&page=' . $i;
+            $client = $this->client->get($url, [
+                'headers' => [
+                    'Host' => 'private70.ghuws.win',
+                    'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                    'Upgrade-Insecure-Requests' => '1',
+                    #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
+                    'accept-language' => 'zh-CN,zh;q=0.9',
+                    'cache-control' => 'no-cache',
+                    'pragma' => 'no-cache',
+                    'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'upgrade-insecure-requests' => '1',
+                    'referer' => 'https://hs.etet.men/index.php',
+                    'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
+                    'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
+                ]
+            ]);
+            $html = $client->getBody()->getContents();
+//            $rs = logFile(RUN_TIME_PATH. 'debug.html', $html);
+//            $html = file_get_contents(RUN_TIME_PATH. 'debug.html');
+            $crawler = new Crawler($html);
+            $mainList = $crawler->filterXPath('//div[@class="list t_one"]');
+            foreach ($mainList as $node) {
+                if ($node->getAttribute('class')) {
+                    $title = preg_replace('/\s/', '', $node->textContent);
+                    if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) {
+                        continue;
+                    }
+                    preg_match('/(\[.*?\d+\:\d+\])/is', $title, $m);
+                    $title = $m[0];
+                    if ($this->filter && !preg_match('/'. $this->filter . '/is', $title)) {
+                        continue;
+                    }
+                    $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
+                    $href = substr($href, 16);
+                    $href = $hostInfo['dirname'] . '/'. $href;
+                    $data[] = [
+                        'href' => $href,
+                        'title' => $title
+                    ];
+                }
+            }
+            logWrite('craw the '. $i . ' page count '. count($data). ' item');
+        }
+
+        if (!empty($data)) {
+            $htmlPath = $htmlStr = '';
+            $crawler = null;
+            $dictStr = '';
+            try {
+                foreach ($data as $key => $row) {
+                    $client = $this->client->get($row['href']);
+                    $html = $client->getBody()->getContents();
+//                    $html = file_get_contents(RUN_TIME_PATH. 'detail.html');
+                    $crawler = new Crawler($html);
+                    $sourceTitle = $row['title'];
+                    $sourceLink = 'src=http://www.baidu.com';
+                    $aCount = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]/a[2]')->count();
+                    if ($aCount) {
+                        $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]/a[2]')->attr('onclick');
+                        $sourceLink = explode('src=', $sourceLink);
+                        $sourceLink = trim($sourceLink[1], '\'');
+                    } else {
+                        $sourceLink = $crawler->filterXPath('//div[contains(@class,"tpc_cont")]')->text();
+                        $sourceLink = preg_match("~http[s]?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)~", $sourceLink, $m);
+                        $sourceLink = $sourceLink[0];
+                    }
+                    $sourceList[] = ['sourceLink' => $sourceLink, 'sourceTile' => $sourceTitle];
+                    $dictStr .= '<tr>';
+                    $dictStr .= '<td class="td-id"><span class="num">' . ($key + 1) . '</span></td>';
+                    $dictStr .= '<td class="td-title"><a href="' . $sourceLink . '" target="_bank">' . $sourceTitle . '</a></td>';
+                    $dictStr .= '</tr>';
+                }
+            } catch (\Exception $e) {
+                logWrite('catch Exception on '. ($key + 1));
+                logWrite('Exception info : '. $e->getTraceAsString());
+            }
+
+            $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
+            if (!is_dir(SAVE_DICT_PATH)) {
+                mkdir(SAVE_DICT_PATH, 0777, true);
+            }
+            file_put_contents(SAVE_DICT_PATH . 'search' . '.html', $dictStr);
+            logWrite('save the search dict success');
+        }
+    }
+}
+
+Sucker::init();
+
+
+DIE;
 
 $runTime = time();
 $crawParams = isset($argv[1]) ? $argv[1] : 'web';
@@ -35,20 +188,20 @@ if ($crawParams == 'img') {
 $hostInfo = pathinfo($baseUrl);
 $tplFile = file_get_contents($tmplPath . 'view.tpl');
 $spider = new Spider();
-//$spider->setHeader([
-//        'Host' => 'private70.ghuws.win',
-//        'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-//        'Upgrade-Insecure-Requests' => '1',
-//        #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
-//        'accept-language' => 'zh-CN,zh;q=0.9',
-//        'cache-control' => 'no-cache',
-//        'pragma' => 'no-cache',
-//        'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
-//        'upgrade-insecure-requests' => '1',
-//        'referer' => 'https://hs.etet.men/index.php',
-//        'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
-//        'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
-//]);
+$spider->setHeader([
+        'Host' => 'private70.ghuws.win',
+        'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Upgrade-Insecure-Requests' => '1',
+        #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
+        'accept-language' => 'zh-CN,zh;q=0.9',
+        'cache-control' => 'no-cache',
+        'pragma' => 'no-cache',
+        'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
+        'upgrade-insecure-requests' => '1',
+        'referer' => 'https://hs.etet.men/index.php',
+        'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
+        'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
+]);
 
 //$crawParams = 'debug';
 if ($crawParams == 'debug') {
