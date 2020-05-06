@@ -33,7 +33,7 @@ class Sucker
     public function __construct()
     {
         global $argv;
-        $doAction = 'doError';
+        $doAction = 'doImg';
         if (!empty($argv[1])) {
             $this->driver = isset($argv[1]) ? $argv[1] : 'doError';
             $doAction = 'do'. ucfirst($this->driver);
@@ -81,8 +81,9 @@ class Sucker
 //                ]
 //            ]);
 //
-////            $html = $client->getBody()->getContents();
-            $html = file_get_contents(RUN_TIME_PATH. 'tt.html');
+//            $html = $client->getBody()->getContents();
+//            logFile(RUN_TIME_PATH. 'debug.html', $html);
+            $html = file_get_contents(RUN_TIME_PATH. 'debug.html');
             $crawler = new Crawler($html);
             $postTitle = $crawler->filterXPath('//title')->text();
             logWrite('the post title '. $postTitle);
@@ -111,6 +112,7 @@ class Sucker
                     $htmlPath = $htmlStr = '';
                     $crawler = null;
                     foreach ($data as $key => $row) {
+                        $html = '';
                         $imageList = [];
                         $imgTitle = str_replace([',', '，','?', '？', '.', '（', '）', ' ', '　'], '', $row['title']);
                         $itemIndex = $key + 1;
@@ -122,20 +124,22 @@ class Sucker
                         if (!is_dir($imagePath)) {
                             @mkdir($imagePath, 0777, true);
                         } else {
-                            logWrite($imgTitle. ' has download ready continue it');
+//                            logWrite($imgTitle. ' has download ready continue it');
                             continue;
                         }
-                        logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
-                        $html = $this->client->get($row['href'])->getBody()->getContents();
-                        #$html = file_get_contents($runTimePath. $urlType . '-child.html');
+//                        logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
+//                        $html = $this->client->get($row['href'])->getBody()->getContents();
+//                        logFile(RUN_TIME_PATH. 'img.html', $html);
+                        $html = file_get_contents(RUN_TIME_PATH. 'img.html');
                         $crawler = new Crawler($html);
+
                         if ($urlType == 7) {
                             $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]/img');
                         } else {
                             $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]//img');
                         }
                         foreach ($imgListDom as $imageNode) {
-                            $imageList[] = $imageNode->getAttribute('data-src');
+                            $imageList[] = $imageNode->getAttribute('ess-data');
                         }
                         $countImage = count($imageList);
                         if ($countImage <= 0) {
@@ -144,7 +148,6 @@ class Sucker
                         } else {
                             logWrite('found '. $countImage . ' images success!');
                         }
-                        p($imageList);
                         foreach ($imageList as $imgIndex => $image) {
                             if (!is_dir($imagePath)) break;
                             $imgIndex = $imgIndex + 1;
@@ -155,8 +158,9 @@ class Sucker
                             $pathInfo = pathinfo($image);
                             $ext = ".". $pathInfo['extension'];
                             $downloadFile = $imagePath . $imgIndex . $ext;
-//                            file_put_contents($downloadFile. )
-                            $spider->setUrl($image)->download($downloadFile);
+                            $rs = $this->client->get($image)->getBody()->getContents();
+                            p($rs);
+                            file_put_contents($downloadFile, $rs);
                             logWrite('save ' . $imgIndex . 'th' . ' success');
                         }
                     }
@@ -203,7 +207,7 @@ class Sucker
                 ]
             ]);
             $html = $client->getBody()->getContents();
-//            $rs = logFile(RUN_TIME_PATH. 'debug.html', $html);
+////            $rs = logFile(RUN_TIME_PATH. 'debug.html', $html);
 //            $html = file_get_contents(RUN_TIME_PATH. 'debug.html');
             $crawler = new Crawler($html);
             $mainList = $crawler->filterXPath('//div[@class="list t_one"]');
@@ -229,13 +233,13 @@ class Sucker
             }
             logWrite('craw the '. $i . ' page count '. count($data). ' item');
         }
-
         if (!empty($data)) {
             $htmlPath = $htmlStr = '';
             $crawler = null;
             $dictStr = '';
             try {
                 foreach ($data as $key => $row) {
+                    unset($html);
                     $client = $this->client->get($row['href']);
                     $html = $client->getBody()->getContents();
 //                    $html = file_get_contents(RUN_TIME_PATH. 'detail.html');
@@ -262,7 +266,6 @@ class Sucker
                 logWrite('catch Exception on '. ($key + 1));
                 logWrite('Exception info : '. $e->getTraceAsString());
             }
-
             $dictStr = preg_replace('/\<\{CONTENT\}\>/s', $dictStr, $tplFile);
             if (!is_dir(SAVE_DICT_PATH)) {
                 mkdir(SAVE_DICT_PATH, 0777, true);
@@ -273,7 +276,7 @@ class Sucker
     }
 }
 
-Sucker::init();
+Sucker::init()->doImg();
 
 
 DIE;
@@ -518,7 +521,7 @@ if ($crawParams == 'img') {
         #$html = file_get_contents($runTimePath . 'fid='. $urlType. '.html');
         $crawler = new Crawler($html);
         $postTitle = $crawler->filterXPath('//title')->text();
-        logWrite('the post title '. $postTitle);
+//        logWrite('the post title '. $postTitle);
         try {
             logWrite('begin parse the ' . $i . ' page');
             $mainList = $crawler->filterXPath('//div[contains(@class,"list t_one")]');
@@ -555,10 +558,10 @@ if ($crawParams == 'img') {
                     if (!is_dir($imagePath)) {
                         @mkdir($imagePath, 0777, true);
                     } else {
-                        logWrite($imgTitle. ' has download ready continue it');
+//                        logWrite($imgTitle. ' has download ready continue it');
                         continue;
                     }
-                    logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
+//                    logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
                     $html = $spider->setUrl($row['href'])->get();
                     #$html = file_get_contents($runTimePath. $urlType . '-child.html');
                     $crawler = new Crawler($html);
