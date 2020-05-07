@@ -64,26 +64,25 @@ class Sucker
         for ($i = $this->loopStart; $i <= $this->loopEnd; $i++) {
             $url = $baseUrl . '&page=' . $i;
             logWrite('begin catching the ' . $i . ' page');
-//            $client = $this->client->get($url, [
-//                'headers' => [
-//                    'Host' => 'private70.ghuws.win',
-//                    'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-//                    'Upgrade-Insecure-Requests' => '1',
-//                    #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
-//                    'accept-language' => 'zh-CN,zh;q=0.9',
-//                    'cache-control' => 'no-cache',
-//                    'pragma' => 'no-cache',
-//                    'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
-//                    'upgrade-insecure-requests' => '1',
-//                    'referer' => 'https://hs.etet.men/index.php',
-//                    'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
-//                    'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
-//                ]
-//            ]);
-//
-//            $html = $client->getBody()->getContents();
-//            logFile(RUN_TIME_PATH. 'debug.html', $html);
-            $html = file_get_contents(RUN_TIME_PATH. 'debug.html');
+
+            $client = $this->client->get($url, [
+                'headers' => [
+                    'Host' => 'private70.ghuws.win',
+                    'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                    'Upgrade-Insecure-Requests' => '1',
+                    #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
+                    'accept-language' => 'zh-CN,zh;q=0.9',
+                    'cache-control' => 'no-cache',
+                    'pragma' => 'no-cache',
+                    'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'upgrade-insecure-requests' => '1',
+                    'referer' => 'https://hs.etet.men/index.php',
+                    'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
+                    'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
+                ]
+            ]);
+
+            $html = $client->getBody()->getContents();
             $crawler = new Crawler($html);
             $postTitle = $crawler->filterXPath('//title')->text();
             logWrite('the post title '. $postTitle);
@@ -93,7 +92,7 @@ class Sucker
                 foreach ($mainList as $node) {
                     if ($node->getAttribute('class')) {
                         $title = preg_replace('/\s/', '', $node->textContent);
-                        if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) continue;
+                        if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false || strpos($title, '论坛共享') !== false) continue;
                         if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］|图|精品/is", $title)) continue;
                         if ($urlType == 8 && strpos($title, '歐')) continue;
                         $title = $node->getElementsByTagName('a')->item(0)->nodeValue;
@@ -124,13 +123,11 @@ class Sucker
                         if (!is_dir($imagePath)) {
                             @mkdir($imagePath, 0777, true);
                         } else {
-//                            logWrite($imgTitle. ' has download ready continue it');
+                            logWrite($imgTitle. ' has download ready continue it');
                             continue;
                         }
-//                        logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
-//                        $html = $this->client->get($row['href'])->getBody()->getContents();
-//                        logFile(RUN_TIME_PATH. 'img.html', $html);
-                        $html = file_get_contents(RUN_TIME_PATH. 'img.html');
+                        logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
+                        $html = $this->client->get($row['href'])->getBody()->getContents();
                         $crawler = new Crawler($html);
 
                         if ($urlType == 7) {
@@ -149,19 +146,26 @@ class Sucker
                             logWrite('found '. $countImage . ' images success!');
                         }
                         foreach ($imageList as $imgIndex => $image) {
-                            if (!is_dir($imagePath)) break;
-                            $imgIndex = $imgIndex + 1;
-                            if ($imgIndex > 30 && $countImage > 50) {
-                                logWrite('too many item to download break it');
+                            try {
+                                if (!is_dir($imagePath)) throw new Exception('can not found image path!');
+                                $imgIndex = $imgIndex + 1;
+                                if ($imgIndex > 30 && $countImage > 50) {
+                                    throw new Exception('too many item to download continue it!');
+                                }
+                                $pathInfo = pathinfo($image);
+                                $ext = ".". $pathInfo['extension'];
+                                $downloadFile = $imagePath . $imgIndex . $ext;
+                                $resource = fopen($downloadFile, 'w');
+                                $this->client->get($image, [
+                                    'verify' => false,
+                                    'sink' => $resource,
+                                    'timeout' => 30
+                                ]);
+                                logWrite('save ' . $imgIndex . 'th' . ' success');
+                            } catch (\Exception $e) {
+                                logWrite($e->getMessage());
                                 break;
                             }
-                            $pathInfo = pathinfo($image);
-                            $ext = ".". $pathInfo['extension'];
-                            $downloadFile = $imagePath . $imgIndex . $ext;
-                            $rs = $this->client->get($image)->getBody()->getContents();
-                            p($rs);
-                            file_put_contents($downloadFile, $rs);
-                            logWrite('save ' . $imgIndex . 'th' . ' success');
                         }
                     }
                 }
@@ -207,8 +211,6 @@ class Sucker
                 ]
             ]);
             $html = $client->getBody()->getContents();
-////            $rs = logFile(RUN_TIME_PATH. 'debug.html', $html);
-//            $html = file_get_contents(RUN_TIME_PATH. 'debug.html');
             $crawler = new Crawler($html);
             $mainList = $crawler->filterXPath('//div[@class="list t_one"]');
             foreach ($mainList as $node) {
@@ -234,7 +236,6 @@ class Sucker
             logWrite('craw the '. $i . ' page count '. count($data). ' item');
         }
         if (!empty($data)) {
-            $htmlPath = $htmlStr = '';
             $crawler = null;
             $dictStr = '';
             try {
@@ -242,7 +243,6 @@ class Sucker
                     unset($html);
                     $client = $this->client->get($row['href']);
                     $html = $client->getBody()->getContents();
-//                    $html = file_get_contents(RUN_TIME_PATH. 'detail.html');
                     $crawler = new Crawler($html);
                     $sourceTitle = $row['title'];
                     $sourceLink = 'src=http://www.baidu.com';
@@ -276,47 +276,9 @@ class Sucker
     }
 }
 
-Sucker::init()->doImg();
+Sucker::init();
 
 
-DIE;
-
-$runTime = time();
-$crawParams = isset($argv[1]) ? $argv[1] : 'web';
-$baseUrl = 'http://private70.ghuws.win/thread0806.php?fid=22';
-if (is_numeric($argv[2]) || is_numeric($argv[3])) {
-    $loopStart = (isset($argv[2]) && $argv[2]) ? $argv[2] : 1;
-    $loopEnd = (isset($argv[3]) && $argv[3]) ? $argv[3] : 400;
-}
-$filter = (isset($argv[2]) && $argv[2]) ? str_replace(',', '|', trim($argv[2], ',')) : '';
-if ($loopStart || $loopEnd) {
-    $filter = (isset($argv[4]) && $argv[4]) ? str_replace(',', '|', trim($argv[4], ',')) : '';
-}
-
-if ($crawParams == 'img') {
-    $crawImgType = isset($argv[4]) && $argv[4] ? $argv[4] : 8;
-    $filter = isset($argv[5]) && $argv[5] ? str_replace(',', '|', trim($argv[5], ',')) : '';
-    $baseUrl = 'http://private70.ghuws.win/thread0806.php?fid='. $crawImgType;
-}
-$hostInfo = pathinfo($baseUrl);
-$tplFile = file_get_contents($tmplPath . 'view.tpl');
-$spider = new Spider();
-$spider->setHeader([
-        'Host' => 'private70.ghuws.win',
-        'accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Upgrade-Insecure-Requests' => '1',
-        #'accept-encoding' => 'gzip, deflate, br', // 发送编码之后的数据
-        'accept-language' => 'zh-CN,zh;q=0.9',
-        'cache-control' => 'no-cache',
-        'pragma' => 'no-cache',
-        'Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8',
-        'upgrade-insecure-requests' => '1',
-        'referer' => 'https://hs.etet.men/index.php',
-        'user-agent' => 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36',
-        'Cookie' => 'ismob=1; hiddenface=; cssNight=; __cfduid=d9195a93c4a594e3459abb8c62987d9a21558925417; PHPSESSID=sb9ls5v5l3ou823hc24t8m9aj1; UM_distinctid=16aff16dd8511c-0a45c2d4e2a94b-52504913-49a10-16aff16dd8b1d6; 227c9_lastvisit=0%091559626523%09%2Fread.php%3Ftid%3D3542890; CNZZDATA950900=cnzz_eid%3D254784805-1559056130-%26ntime%3D1559628669'
-]);
-
-//$crawParams = 'debug';
 if ($crawParams == 'debug') {
 
     // ffmpeg -f concat -i inputs.txt out.flv
@@ -507,98 +469,6 @@ if ($crawParams == 'fed') {
     logWrite('found total items '. count($data));
 
 
-}
-
-if ($crawParams == 'img') {
-    $data = [];
-    $urlInfo = parse_url($baseUrl);
-    $urlType = substr($urlInfo['query'], 4);
-    for ($i = $loopStart; $i <= $loopEnd; $i++) {
-        $url = $baseUrl . '&page=' . $i;
-        logWrite('begin catching the ' . $i . ' page');
-        $html = $spider->setUrl($url)
-                ->get();
-        #$html = file_get_contents($runTimePath . 'fid='. $urlType. '.html');
-        $crawler = new Crawler($html);
-        $postTitle = $crawler->filterXPath('//title')->text();
-//        logWrite('the post title '. $postTitle);
-        try {
-            logWrite('begin parse the ' . $i . ' page');
-            $mainList = $crawler->filterXPath('//div[contains(@class,"list t_one")]');
-            foreach ($mainList as $node) {
-                if ($node->getAttribute('class')) {
-                    $title = preg_replace('/\s/', '', $node->textContent);
-                    if (strpos($title, '↑') !== false || strpos($title, '■■■') !== false) continue;
-                    if (!preg_match("/\(\d+[pP]\)|\[\d+[pP]\]|［\d+[pP]］|图|精品/is", $title)) continue;
-                    if ($urlType == 8 && strpos($title, '歐')) continue;
-                    $title = $node->getElementsByTagName('a')->item(0)->nodeValue;
-                    $href = str_replace(["'", ";"], "", $node->getAttribute('onclick'));
-                    $href = substr($href, 16);
-                    $href = $hostInfo['dirname'] . '/'. $href;
-                    $data[] = [
-                        'href' => $href,
-                        'title' => $title
-                    ];
-                }
-            }
-            $totalItem = count($data);
-            logWrite('parse the ' . $i . ' page success count ' . $totalItem . ' item');
-            if (!empty($data)) {
-                $htmlPath = $htmlStr = '';
-                $crawler = null;
-                foreach ($data as $key => $row) {
-                    $imageList = [];
-                    $imgTitle = str_replace([',', '，','?', '？', '.', '（', '）', ' ', '　'], '', $row['title']);
-                    $itemIndex = $key + 1;
-                    #$itemIndex = 76; // debug
-                    $imagePath = $saveImgPath . $imgTitle . DS;
-                    if (IS_WIN) {
-                        $imagePath = mb_convert_encoding($saveImgPath . $imgTitle, 'gbk') . DS;
-                    }
-                    if (!is_dir($imagePath)) {
-                        @mkdir($imagePath, 0777, true);
-                    } else {
-//                        logWrite($imgTitle. ' has download ready continue it');
-                        continue;
-                    }
-//                    logWrite('begin catching the ' . $itemIndex . ' item ' . ' title: ' . $imgTitle);
-                    $html = $spider->setUrl($row['href'])->get();
-                    #$html = file_get_contents($runTimePath. $urlType . '-child.html');
-                    $crawler = new Crawler($html);
-                    if ($urlType == 7) {
-                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]/img');
-                    } else {
-                        $imgListDom = $crawler->filterXPath('//div[@class="tpc_cont"]//img');
-                    }
-                    foreach ($imgListDom as $imageNode) {
-                        $imageList[] = $imageNode->getAttribute('data-src');
-                    }
-                    $countImage = count($imageList);
-                    if ($countImage <= 0) {
-                        logWrite('not found image on this page item: '. $itemIndex);
-                        continue;
-                    } else {
-                        logWrite('found '. $countImage . ' images success!');
-                    }
-                    foreach ($imageList as $imgIndex => $image) {
-                        if (!is_dir($imagePath)) break;
-                        $imgIndex = $imgIndex + 1;
-                        if ($imgIndex > 30 && $countImage > 50) {
-                            logWrite('too many item to download break it');
-                            break;
-                        }
-                        $pathInfo = pathinfo($image);
-                        $ext = ".". $pathInfo['extension'];
-                        $downloadFile = $imagePath . $imgIndex . $ext;
-                        $spider->setUrl($image)->download($downloadFile);
-                        logWrite('save ' . $imgIndex . 'th' . ' success');
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            logWrite('catch Exception on the ' . $i . ' page ' . $itemIndex . ' item');
-        }
-    }
 }
 
 if ($crawParams == 'down') {

@@ -2,8 +2,8 @@
 //date_default_timezone_set('Asia/Shanghai');
 ini_set('max_execution_time', 0); // 不限制执行时间
 ini_set('memory_limit','512M');
-//error_reporting(E_ALL ^E_NOTICE);
-error_reporting(0);
+error_reporting(E_ALL ^E_NOTICE);
+//error_reporting(0);
 set_time_limit(0); // 不限制超时时间
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', __DIR__. DS. '..'. DS);
@@ -17,6 +17,7 @@ define('SAVE_MOVIE_PATH', CRAW_ROOT_PATH. 'dict'. DS . 'movie'. DS);
 define('RUN_TIME_PATH', ROOT. 'runtime'. DS);
 define('TMPL_PATH', ROOT. 'vendor'. DS. 'tmpl'. DS);
 define('COOKIE_PATH',  ROOT. 'cookie'. DS);
+
 
 function logWrite($msg) {
     $time = date('Y-m-d H:i:s');

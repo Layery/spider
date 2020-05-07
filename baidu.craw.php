@@ -184,23 +184,14 @@ class PostServer
 
 }
 
+$url = 'https://www.nsaimg.com/2020/05/07/dcb0b3f85899b.jpg';
 
-// 测试企查查接口
-
-$url = 'http://api.qichacha.com/ECIV4/GetDetailsByName?key=9be73ef2ab9648789fb4a7de0a3a8d6f&keyword=悦美';
-$time = time();
-$apiKey = '9be73ef2ab9648789fb4a7de0a3a8d6f';
-$apiSecretKey = '66FD3D0C7E1C59D781FCF9E83C02EEEF';
-$token = strtoupper(md5($apiKey. $time . $apiSecretKey));
-$client = PostServer::getGuzzleClient();
-$rs = $client->get($url, [
-    'headers' => [
-        'Token' => $token,
-        'Timespan' => $time
-    ]
+$resource = fopen(RUN_TIME_PATH. 'header.jpg', 'w');
+$rs = PostServer::getGuzzleClient()->get($url, [
+    'verify' => false,
+    'sink' => $resource,
+    'timeout' => 1
 ]);
-p($rs->getBody()->getContents());
-
 
 
 
