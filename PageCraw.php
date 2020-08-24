@@ -276,7 +276,9 @@ class Sucker
     }
 }
 
+
 Sucker::init();
+die;
 
 
 if ($crawParams == 'debug') {
@@ -297,11 +299,13 @@ if ($crawParams == 'debug') {
 
 
 
+$crawParams = 'yase';
 if ($crawParams == 'yase') {
     $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://j.yasejj2.com/video/view/984405';
+    $baseUrl = 'https://w.huasekk.com/video/view/1127861';
     $result = file_get_contents($baseUrl);
-    file_put_contents($runTimePath. 'result.html', $result);
+    logFile(RUN_TIME_PATH.'result.html', $result);
+
     $host = parse_url($baseUrl);
     $host = $host['scheme'] . '://'. $host['host'];
     $crawler = new Crawler($result);
@@ -322,6 +326,7 @@ if ($crawParams == 'yase') {
             continue;
         }
         $apiResultUrl = $apiResult['data'];
+    
         $apiPathInfo = pathinfo($apiResultUrl);
         $apiResult = parse_url($apiResultUrl);
         $apischeme = $apiResult['scheme'];

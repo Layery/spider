@@ -1,0 +1,13 @@
+:authority: h5api.m.taobao.com
+:method: GET
+:path: /h5/mtop.tmall.kangaroo.core.service.route.aldlampservicefixedres/1.0/?jsv=2.4.0&appKey=12574478&t=1598274744740&sign=3f852cde2db23777710ada8251ca18c4&api=mtop.tmall.kangaroo.core.service.route.AldLampServiceFixedRes&dataType=jsonp&v=1.0&timeout=3000&preventFallback=true&type=jsonp&callback=mtopjsonp1&data=%7B%22curPageUrl%22%3A%22https%253A%252F%252Fmarket.m.taobao.com%252Fapps%252Fyouhaohuo%252Findex%252Ftag.html%253Fwh_weex%253Dtrue%2526type%253Dsearch%2526key%253D%2525E7%25258E%2525A9%2525E5%252585%2525B7%22%2C%22appId%22%3A%226696424%22%2C%22tce_sid%22%3A%221891397%22%2C%22tce_vid%22%3A%220%22%2C%22topic%22%3A%22search%22%2C%22src%22%3A%22phone%22%2C%22params%22%3A%22%7B%5C%22resId%5C%22%3A%5C%226696424%5C%22%2C%5C%22bizId%5C%22%3A%5C%222020%5C%22%2C%5C%22tce_sid%5C%22%3A%5C%221891397%5C%22%2C%5C%22tce_vid%5C%22%3A%5C%220%5C%22%2C%5C%22topic%5C%22%3A%5C%22search%5C%22%2C%5C%22env%5C%22%3A%5C%22dev%5C%22%2C%5C%22pageNo%5C%22%3A1%2C%5C%22psId%5C%22%3A%5C%2251817%5C%22%2C%5C%22bizCode%5C%22%3A%5C%22steins.goodItem%5C%22%2C%5C%22type%5C%22%3A%5C%22search%5C%22%2C%5C%22page%5C%22%3A1%2C%5C%22pageSize%5C%22%3A20%2C%5C%22src%5C%22%3A%5C%22phone%5C%22%2C%5C%22source%5C%22%3A%5C%22tceFaas%5C%22%2C%5C%22key%5C%22%3A%5C%22%E7%8E%A9%E5%85%B7%5C%22%7D%22%2C%22_pvuuid%22%3A1598274744719%2C%22isbackup%22%3Atrue%7D
+:scheme: https
+accept: */*
+accept-encoding: gzip, deflate, br
+accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+cookie: thw=cn; cna=BYARFyaxxVYCAXf4IWbFZbnA; sgcookie=EyqLpEMuFqEaf%2F5H4seOy; tracknick=%5Cu571F%5Cu8C46%5Cu4E0D%5Cu662F%5Cu852C%5Cu83DC01; _cc_=W5iHLLyFfA%3D%3D; enc=dQKJouFJ4Pp75ualx9yyujyrcYZO%2BAXEmb9jVlLQ%2F7ZDSMzMFfobp98GZ9fa5SnP0JKoDXvP9AyoRPhwnp2K6A%3D%3D; hng=CN%7Czh-CN%7CCNY%7C156; _m_h5_tk=1228da26d184c8432bb6016a0e0ae4ec_1598283726675; _m_h5_tk_enc=b4e490e2bf04af90f716e12ca0d41a3f; isg=BOjoRvzBI8hi3Q6mykztsbtqudb6EUwbtTbeoaIZNGNW_YhnSyEcq3408ZUNGQTz; tfstk=cVuhBgXqSDrC1wEiceaIG8W06LYAZ95UdoEZ7VVH_e4nVRuNiIsN0X6NdRRusg1..; l=eBQXVfKHQ6YrGg7OBOfahurza77OSIRvDuPzaNbMiOCPOy1B5DOVWZPD-4T6CnGVh65JJ3-PVxwbBeYBqBdKnxvTBLMvKpDmn
+referer: https://market.m.taobao.com/apps/youhaohuo/index/tag.html?wh_weex=true&type=search&key=%E7%8E%A9%E5%85%B7
+sec-fetch-dest: script
+sec-fetch-mode: no-cors
+sec-fetch-site: same-site
+user-agent: Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1

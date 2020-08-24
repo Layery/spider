@@ -16,16 +16,6 @@ use function GuzzleHttp\json_decode;
 use function GuzzleHttp\json_encode;
 
 
-$client = new \GuzzleHttp\Client();
-
-$cookie = 'session_id=1585094365439395141; laiyunUrl=https://www.abeiyun.com/control/; Hm_lvt_491579dd37a8aefdc599ec4d556fd33f=1585094347; Hm_lpvt_491579dd37a8aefdc599ec4d556fd33f=1585094368';
-
-$freeListApi = 'http://api.abeiyun.com/www/renew.php';
-
-
-
-
-
 
 class PostServer
 {
@@ -74,7 +64,7 @@ class PostServer
         $cookiejar = file_get_contents(COOKIE_PATH. 'tieba.tmp');
         $cookiejar = \json_decode($cookiejar, true);
         $client = self::getGuzzleClient($cookiejar, 'tieba.baidu.com');
-    
+
         $params = [
             'ie' => 'utf-8',
             'kw' => '阿贝云',
@@ -181,22 +171,32 @@ class PostServer
         return new Client();
     }
 
+    public static function cookie2Array($cookiePath = '')
+    {
+        $data = [];
+        if ($cookiePath) {
+            $temp = file_get_contents($cookiePath);
+            $temp = explode("\n", $temp);
+            foreach ($temp as $row) {
+                $rowArray = explode(': ', $row);
+                $data[trim($rowArray[0])] = trim($rowArray[1]);
+            }
+        }
+        return $data;
+    }
 
 }
 
-$url = 'https://www.nsaimg.com/2020/05/07/dcb0b3f85899b.jpg';
 
-$resource = fopen(RUN_TIME_PATH. 'header.jpg', 'w');
-$rs = PostServer::getGuzzleClient()->get($url, [
-    'verify' => false,
-    'sink' => $resource,
-    'timeout' => 1
-]);
+$cookieArray = PostServer::cookie2Array(COOKIE_PATH. 'hospital.cookie');
+$client = PostServer::getGuzzleClient($cookieArray, 'mp.mhealth100.com');
 
+$url = "https://h5api.m.taobao.com/h5/mtop.tmall.kangaroo.core.service.route.aldlampservicefixedres/1.0/?jsv=2.4.0&appKey=12574478&t=1598274744740&sign=3f852cde2db23777710ada8251ca18c4&api=mtop.tmall.kangaroo.core.service.route.AldLampServiceFixedRes&dataType=jsonp&v=1.0&timeout=3000&preventFallback=true&type=jsonp&callback=mtopjsonp1&data=%7B%22curPageUrl%22%3A%22https%253A%252F%252Fmarket.m.taobao.com%252Fapps%252Fyouhaohuo%252Findex%252Ftag.html%253Fwh_weex%253Dtrue%2526type%253Dsearch%2526key%253D%2525E7%25258E%2525A9%2525E5%252585%2525B7%22%2C%22appId%22%3A%226696424%22%2C%22tce_sid%22%3A%221891397%22%2C%22tce_vid%22%3A%220%22%2C%22topic%22%3A%22search%22%2C%22src%22%3A%22phone%22%2C%22params%22%3A%22%7B%5C%22resId%5C%22%3A%5C%226696424%5C%22%2C%5C%22bizId%5C%22%3A%5C%222020%5C%22%2C%5C%22tce_sid%5C%22%3A%5C%221891397%5C%22%2C%5C%22tce_vid%5C%22%3A%5C%220%5C%22%2C%5C%22topic%5C%22%3A%5C%22search%5C%22%2C%5C%22env%5C%22%3A%5C%22dev%5C%22%2C%5C%22pageNo%5C%22%3A1%2C%5C%22psId%5C%22%3A%5C%2251817%5C%22%2C%5C%22bizCode%5C%22%3A%5C%22steins.goodItem%5C%22%2C%5C%22type%5C%22%3A%5C%22search%5C%22%2C%5C%22page%5C%22%3A1%2C%5C%22pageSize%5C%22%3A20%2C%5C%22src%5C%22%3A%5C%22phone%5C%22%2C%5C%22source%5C%22%3A%5C%22tceFaas%5C%22%2C%5C%22key%5C%22%3A%5C%22%E7%8E%A9%E5%85%B7%5C%22%7D%22%2C%22_pvuuid%22%3A1598274744719%2C%22isbackup%22%3Atrue%7D";
+$response = $client->get($url, []);
+p($response);
 
-
-
-
+$rs = $response->getBody()->getContents();
+$rs = json_decode($rs, 1);
 
 
 
