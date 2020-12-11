@@ -20,6 +20,9 @@ fwrite(STDOUT, "Hello,$name"); //在终端回显输入*/
 
 class Sucker
 {
+    /**
+     * @var $client Client
+     */
     protected $client;
 
     private $driver;
@@ -274,6 +277,33 @@ class Sucker
             logWrite('save the search dict success');
         }
     }
+
+    public function doDown()
+    {
+        $html = file_get_contents(SAVE_DICT_PATH. 'search.html');
+        preg_match_all('/\<a\s+.*?\>.*?\<\/a\>/is', $html, $a);
+        foreach ($a[0] as $key => $row) {
+            preg_match('/(?<=href=\").*?(?=\"\s+target)/', $row, $href);
+            preg_match('/\[.*?\d+\:\d+\]/is', $row, $title);
+            if (IS_WIN) {
+                $title = mb_convert_encoding($title[0], 'gbk');
+            } else {
+                $title = $title[0];
+            }
+            $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
+            $html = file_get_contents($href[0]);
+            preg_match('/video\:+\'.*?\.mp4|video_url\:\s+\'.*?\.mp4/', $html, $videoUrl);
+            if (empty($videoUrl)) {
+                logWrite('could not found item continue it');
+                continue;
+            }
+            $videoUrl = explode("'", $videoUrl[0]);
+            $videoUrl = $videoUrl[1];
+            #$videoUrl = 'https://hctv10.xyz/get_file/4/e542125c4bf79f8404dfb0f3aa88eb316ed8482609/17000/17991/17991_360p.mp4';
+            logWrite('begin download file '. $title);
+            (new Spider())->setUrl($videoUrl)->download(SAVE_MOVIE_PATH . ($title ? $title : 'save'). '.mp4');
+        }
+    }
 }
 
 
@@ -294,70 +324,6 @@ if ($crawParams == 'debug') {
     foreach ($arr as $v) {
         $data = "file E:/www/spider/crawFiles/dict/movie/" . $v. ".ts". "\n";
         file_put_contents($saveMoviePath. 'out.txt', $data, FILE_APPEND);
-    }
-}
-
-
-
-$crawParams = 'yase';
-if ($crawParams == 'yase') {
-    $baseUrl = 'https://j.yaseh4.com/search/?type=video&keyword='. $filter;
-    $baseUrl = 'https://w.huasekk.com/video/view/1127861';
-    $result = file_get_contents($baseUrl);
-    logFile(RUN_TIME_PATH.'result.html', $result);
-
-    $host = parse_url($baseUrl);
-    $host = $host['scheme'] . '://'. $host['host'];
-    $crawler = new Crawler($result);
-    $itemList = $crawler->filterXPath('//li[@class="video-item space-sm"]/div[@class="white"]');
-    $data = $itemList->each(function (Crawler $node, $i) use ($host) {
-        $href = $node->filterXPath('//div[@class="video-thumb"]/div')->attr('data-href');
-        $href = $host . $href;
-        $title = $node->filterXPath('//div[@class="video-item-title"]/a')->text();
-        return ['href' => $href, 'title' => $title];
-    });
-    foreach ($data as $index => $row) {
-        $nowTitle = mb_convert_encoding($row['title'], 'gbk');
-        $itemID = (int) basename($row['href']);
-        $api = $host . '/api/video/player_domain?id='. $itemID;
-        $apiResult = json_decode(file_get_contents($api), 1);
-        if ($apiResult['code'] == -1) {
-            logWrite($apiResult['msg']);
-            continue;
-        }
-        $apiResultUrl = $apiResult['data'];
-    
-        $apiPathInfo = pathinfo($apiResultUrl);
-        $apiResult = parse_url($apiResultUrl);
-        $apischeme = $apiResult['scheme'];
-        $apischeme = 'http';
-        $apiHost = $apischeme . "://". $apiResult['host'];
-        $master = file_get_contents($apiResultUrl);
-        $playlist = explode("\n", $master);
-        // 拼接ts文件
-        if (empty($playlist[2])) {
-            logWrite('can not find ts config');
-            continue;
-        }
-
-        logWrite($row['title']. " begin catching");
-
-        $tsUrl = $apiPathInfo['dirname'] .'/'. $playlist[2];
-        $tsResult = file_get_contents($tsUrl);
-        preg_match_all('/\/\d+.*?\n/', $tsResult, $m);
-        if (empty($m[0])) continue;
-        $tsArr = range(0, count($m[0])-1);
-        $cmd = "copy /b ";
-        foreach ($m[0] as $key => $val) {
-            $url = rtrim($apiHost . $val, "\n");
-            $temp = file_get_contents($url);
-            file_put_contents($saveMoviePath . $key . '.ts', $temp);
-            $cmd .= $saveMoviePath. $key. ".ts+";
-        }
-        $cmd = rtrim($cmd, '+');
-        $cmd .= " ". $saveMoviePath. $nowTitle. '.mp4';
-        exec($cmd);
-        // exec('del /s/q/f "'. $saveMoviePath. '*.ts' .'"');
     }
 }
 
@@ -475,32 +441,6 @@ if ($crawParams == 'fed') {
 
 
 }
-
-if ($crawParams == 'down') {
-    $html = file_get_contents($saveDictPath. 'search.html');
-    preg_match_all('/\<a\s+.*?\>.*?\<\/a\>/is', $html, $a);
-    foreach ($a[0] as $key => $row) {
-        preg_match('/(?<=href=\").*?(?=\"\s+target)/', $row, $href);
-        preg_match('/\[.*?\d+\:\d+\]/is', $row, $title);
-        if (IS_WIN) {
-            $title = mb_convert_encoding($title[0], 'gbk');
-        } else {
-            $title = $title[0];
-        }
-        $title = str_replace(['|', '"','<', '>', ':', '[', ']', '【', '】'], ['','','','','-'], $title);
-        $html = file_get_contents($href[0]);
-        preg_match('/video\:+\'.*?\.mp4|video_url\:\s+\'.*?\.mp4/', $html, $videoUrl);
-        if (empty($videoUrl)) {
-            logWrite('could not found item continue it');
-            continue;
-        }
-        $videoUrl = explode("'", $videoUrl[0]);
-        $videoUrl = $videoUrl[1];
-        logWrite('begin download file '. $title);
-        $spider->setUrl($videoUrl)->download($saveMoviePath . $title . '.mp4');
-    }
-}
-
 
 
 
